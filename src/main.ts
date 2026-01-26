@@ -6,8 +6,8 @@ import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.j
 import '@shoelace-style/shoelace/dist/components/icon/icon.js'
 import '@shoelace-style/shoelace/dist/components/input/input.js'
 
-// Needed for things like <sl-icon>. You can switch this to a local path later for offline builds.
-setBasePath('https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/dist/')
+// Needed for things like <sl-icon> (served from public/shoelace/assets).
+setBasePath('/shoelace/')
 
 import './app.css'
 import App from './App.svelte'

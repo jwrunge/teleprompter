@@ -11,6 +11,7 @@
     "postinstall": "node scripts/copy-shoelace-assets.mjs"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.13",
     "@capacitor/cli": "^8.0.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tsconfig/svelte": "^5.0.6",

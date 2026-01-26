@@ -1,5 +1,3 @@
 export class State {
-    userId?: string;
-
-    
+	userId?: string;
 }

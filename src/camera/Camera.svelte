@@ -1,69 +1,69 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte'
+import { onDestroy, onMount } from "svelte";
 
-	let videoEl: HTMLVideoElement | null = null
-	let stream: MediaStream | null = null
-	let errorMessage: string | null = null
-	let isStarting = false
+const videoEl: HTMLVideoElement | null = null;
+let stream: MediaStream | null = null;
+let errorMessage: string | null = null;
+let isStarting = false;
 
-	export let autoplay = true
-	export let muted = true
-	export let playsInline = true
-	export let facingMode: 'user' | 'environment' = 'user'
+export const autoplay = true;
+export const muted = true;
+export const playsInline = true;
+export let facingMode: "user" | "environment" = "user";
 
-	async function start() {
-		if (isStarting) return
-		isStarting = true
-		errorMessage = null
+async function start() {
+	if (isStarting) return;
+	isStarting = true;
+	errorMessage = null;
 
-		try {
-			stop()
+	try {
+		stop();
 
-			if (!navigator.mediaDevices?.getUserMedia) {
-				throw new Error('getUserMedia is not supported in this browser.')
-			}
-
-			stream = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode },
-				audio: false,
-			})
-
-			if (!videoEl) return
-			videoEl.srcObject = stream
-
-			if (autoplay) {
-				await videoEl.play()
-			}
-		} catch (err) {
-			errorMessage = err instanceof Error ? err.message : String(err)
-			stop()
-		} finally {
-			isStarting = false
+		if (!navigator.mediaDevices?.getUserMedia) {
+			throw new Error("getUserMedia is not supported in this browser.");
 		}
-	}
 
-	function stop() {
-		if (stream) {
-			for (const track of stream.getTracks()) track.stop()
-			stream = null
+		stream = await navigator.mediaDevices.getUserMedia({
+			video: { facingMode },
+			audio: false,
+		});
+
+		if (!videoEl) return;
+		videoEl.srcObject = stream;
+
+		if (autoplay) {
+			await videoEl.play();
 		}
-		if (videoEl) {
-			videoEl.srcObject = null
-		}
+	} catch (err) {
+		errorMessage = err instanceof Error ? err.message : String(err);
+		stop();
+	} finally {
+		isStarting = false;
 	}
+}
 
-	async function toggleFacingMode() {
-		facingMode = facingMode === 'user' ? 'environment' : 'user'
-		await start()
+function stop() {
+	if (stream) {
+		for (const track of stream.getTracks()) track.stop();
+		stream = null;
 	}
+	if (videoEl) {
+		videoEl.srcObject = null;
+	}
+}
 
-	onMount(() => {
-		if (autoplay) void start()
-	})
+async function toggleFacingMode() {
+	facingMode = facingMode === "user" ? "environment" : "user";
+	await start();
+}
 
-	onDestroy(() => {
-		stop()
-	})
+onMount(() => {
+	if (autoplay) void start();
+});
+
+onDestroy(() => {
+	stop();
+});
 </script>
 
 <div class="camera">

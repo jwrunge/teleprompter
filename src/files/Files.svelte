@@ -7,7 +7,7 @@
         state: State
     } = $props();
 
-    let syncFiles = $derived(state.userId);
+    const syncFiles = $derived(state.userId);
 </script>
 
 <h1>Files</h1>

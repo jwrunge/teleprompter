@@ -1,5 +1,5 @@
-import { Capacitor } from '@capacitor/core'
-import type { SpeechRecognizer, SpeechRecognizerEvents } from './types'
+import { Capacitor } from "@capacitor/core";
+import type { SpeechRecognizer, SpeechRecognizerEvents } from "./types";
 
 /**
  * Placeholder backend.
@@ -8,37 +8,37 @@ import type { SpeechRecognizer, SpeechRecognizerEvents } from './types'
  * partial/final transcripts from iOS/Android native speech APIs.
  */
 export class CapacitorNativeRecognizer implements SpeechRecognizer {
-  readonly backend = 'capacitor-native' as const
+	readonly backend = "capacitor-native" as const;
 
-  private events: SpeechRecognizerEvents
-  private language = 'en-US'
+	private events: SpeechRecognizerEvents;
+	private language = "en-US";
 
-  get isSupported() {
-    return Capacitor.isNativePlatform()
-  }
+	get isSupported() {
+		return Capacitor.isNativePlatform();
+	}
 
-  constructor(events: SpeechRecognizerEvents = {}) {
-    this.events = events
-  }
+	constructor(events: SpeechRecognizerEvents = {}) {
+		this.events = events;
+	}
 
-  setLanguage(language: string) {
-    this.language = language
-  }
+	setLanguage(language: string) {
+		this.language = language;
+	}
 
-  async start() {
-    const err = new Error(
-      `Native speech backend not implemented yet (requested lang: ${this.language}).`
-    )
-    this.events.onError?.(err)
-    this.events.onStateChange?.('error')
-    throw err
-  }
+	async start() {
+		const err = new Error(
+			`Native speech backend not implemented yet (requested lang: ${this.language}).`,
+		);
+		this.events.onError?.(err);
+		this.events.onStateChange?.("error");
+		throw err;
+	}
 
-  async stop() {
-    this.events.onStateChange?.('idle')
-  }
+	async stop() {
+		this.events.onStateChange?.("idle");
+	}
 
-  dispose() {
-    // no-op
-  }
+	dispose() {
+		// no-op
+	}
 }

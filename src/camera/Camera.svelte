@@ -14,10 +14,10 @@
 	let downloadUrl = $state<string | null>(null);
 
 	let {
-		autoplay,
-		muted,
-		playsInline,
-		facingMode,
+		autoplay = true,
+		muted = true,
+		playsInline = true,
+		facingMode = "user",
 	}: {
 		autoplay?: boolean;
 		muted?: boolean;
@@ -31,7 +31,7 @@
 		errorMessage = null;
 
 		try {
-			stop();
+			await stop();
 
 			if (!navigator.mediaDevices?.getUserMedia) {
 				throw new Error(
@@ -46,20 +46,23 @@
 
 			if (!videoEl) return;
 			videoEl.srcObject = stream;
-
-			if (autoplay) {
+			// Always attempt to play once the stream is attached.
+			// If autoplay is blocked, the user can press Start again.
+			try {
 				await videoEl.play();
+			} catch {
+				// Ignore autoplay errors
 			}
 		} catch (err) {
 			errorMessage = err instanceof Error ? err.message : String(err);
-			stop();
+			await stop();
 		} finally {
 			isStarting = false;
 		}
 	}
 
-	function stop() {
-		void stopRecording();
+	async function stop() {
+		await stopRecording();
 		if (stream) {
 			for (const track of stream.getTracks()) track.stop();
 			stream = null;
@@ -125,7 +128,7 @@
 	});
 
 	onDestroy(() => {
-		stop();
+		void stop();
 		resetDownload();
 	});
 </script>
@@ -139,7 +142,7 @@
 		<button type="button" onclick={start} disabled={isStarting}
 			>Start</button
 		>
-		<button type="button" onclick={stop}>Stop</button>
+		<button type="button" onclick={() => void stop()}>Stop</button>
 		<button type="button" onclick={toggleFacingMode} disabled={isStarting}
 			>Flip</button
 		>

@@ -6,6 +6,13 @@
 		AudioRecorder,
 		type RecordingResult as AudioRecordingResult,
 	} from "../lib/recording/audioRecorder";
+	import {
+		clearDeviceProfiles,
+		loadDeviceProfiles,
+		makeProfileFromTrack,
+		upsertDeviceProfile,
+		type DeviceProfile,
+	} from "../lib/devices/deviceProfiles";
 
 	type RecordingMode = "video+audio" | "video-only" | "audio-only";
 
@@ -28,6 +35,8 @@
 	let selectedVideoDeviceId = $state<string>("");
 	let selectedAudioDeviceId = $state<string>("");
 	let hasDeviceLabels = $state(false);
+	let deviceProfiles = $state<DeviceProfile[]>([]);
+	let profilesDownloadUrl = $state<string | null>(null);
 
 	let {
 		autoplay = true,
@@ -108,6 +117,49 @@
 		}
 	}
 
+	function refreshProfiles() {
+		deviceProfiles = loadDeviceProfiles();
+	}
+
+	function resetProfilesDownload() {
+		if (profilesDownloadUrl) URL.revokeObjectURL(profilesDownloadUrl);
+		profilesDownloadUrl = null;
+	}
+
+	function exportProfiles() {
+		resetProfilesDownload();
+		const blob = new Blob([JSON.stringify(deviceProfiles, null, 2)], {
+			type: "application/json",
+		});
+		profilesDownloadUrl = URL.createObjectURL(blob);
+	}
+
+	function clearProfiles() {
+		clearDeviceProfiles();
+		refreshProfiles();
+		resetProfilesDownload();
+	}
+
+	function findDeviceById(kind: "videoinput" | "audioinput", deviceId: string) {
+		const list = kind === "videoinput" ? videoDevices : audioDevices;
+		return list.find((d) => d.deviceId === deviceId);
+	}
+
+	function recordTrackProfile(kind: "videoinput" | "audioinput", track: MediaStreamTrack, hintedDeviceId?: string) {
+		const deviceId = hintedDeviceId || track.getSettings?.().deviceId || "";
+		const deviceInfo = deviceId ? findDeviceById(kind, deviceId) : undefined;
+		const profile = makeProfileFromTrack({
+			kind,
+			deviceInfo,
+			track,
+			appNotes:
+				kind === "videoinput"
+					? `preset=${videoPreset}, fps=${frameRate}`
+					: `audioBitsPerSecond=${audioBitsPerSecond}`,
+		});
+		deviceProfiles = upsertDeviceProfile(profile);
+	}
+
 	async function requestPermissionsForLabels() {
 		if (!navigator.mediaDevices?.getUserMedia) return;
 		const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -155,6 +207,7 @@
 				actualWidth = settings.width ?? null;
 				actualHeight = settings.height ?? null;
 				actualFrameRate = settings.frameRate ?? null;
+				recordTrackProfile("videoinput", track, selectedVideoDeviceId);
 			}
 			// Always attempt to play once the stream is attached.
 			// If autoplay is blocked, the user can press Start again.
@@ -222,6 +275,8 @@
 		});
 
 		await refreshDevices();
+		const track = micStream.getAudioTracks()[0];
+		if (track) recordTrackProfile("audioinput", track, selectedAudioDeviceId);
 	}
 
 	async function startRecording() {
@@ -319,6 +374,7 @@
 
 	onMount(() => {
 		void refreshDevices();
+		refreshProfiles();
 		navigator.mediaDevices?.addEventListener?.("devicechange", refreshDevices);
 		if (autoplay) void start();
 	});
@@ -327,6 +383,7 @@
 		navigator.mediaDevices?.removeEventListener?.("devicechange", refreshDevices);
 		void stop();
 		resetDownload();
+		resetProfilesDownload();
 	});
 </script>
 
@@ -412,6 +469,24 @@
 			>
 				Show device names
 			</button>
+		{/if}
+	</div>
+
+	<div class="controls">
+		<button type="button" onclick={() => refreshProfiles()} disabled={isStarting || isRecording}
+			>Reload profiles</button
+		>
+		<button type="button" onclick={exportProfiles} disabled={deviceProfiles.length === 0}
+			>Export profiles</button
+		>
+		<button type="button" onclick={clearProfiles} disabled={deviceProfiles.length === 0}
+			>Clear profiles</button
+		>
+		{#if profilesDownloadUrl}
+			<a class="link" href={profilesDownloadUrl} download="device-profiles.json">Download profiles JSON</a>
+		{/if}
+		{#if deviceProfiles.length > 0}
+			<p class="meta">Profiles: {deviceProfiles.length}</p>
 		{/if}
 	</div>
 

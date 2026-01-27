@@ -29,6 +29,7 @@
 	},
 	"dependencies": {
 		"@capacitor/core": "^8.0.1",
+		"@capacitor/filesystem": "^8.1.0",
 		"@shoelace-style/shoelace": "^2.20.1"
 	}
 }

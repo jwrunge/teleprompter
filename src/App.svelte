@@ -1,48 +1,15 @@
 <script lang="ts">
-import { onDestroy } from "svelte";
-import Camera from "./camera/Camera.svelte";
-import Files from "./files/Files.svelte";
-import { createSpeechRecognizer, type SpeechRecognizer } from "./lib/speech";
+	import { onDestroy } from "svelte";
+	import Camera from "./camera/Camera.svelte";
+	import Files from "./files/Files.svelte";
+	import { SpeechRecognizerMgr } from "./lib/speech";
 
-let recognizer: SpeechRecognizer | null = null;
-const isSupported = true;
-let recState: string = "idle";
-const backend: string = "auto";
-const language = "en-US";
-let partial = "";
-const finals: string[] = [];
-let lastError: string | null = null;
+	const show = $state<"files" | "voice">("files");
+	const recognizer = new SpeechRecognizerMgr();
 
-const show = $state<"files" | "voice">("files");
-
-function ensureRecognizer() {
-	if (recognizer) return;
-
-	recognizer = createSpeechRecognizer(
-		{
-			onStateChange: (s) => (recState = s),
-			onPartial: (text) => {
-				partial = text;
-			},
-			onFinal: (text) => {
-	}
-}
-
-async function startListening() {
-	lastError = null;
-	ensureRecognizer();
-	if (!recognizer || !recognizer.isSupported) return;
-	recognizer.setLanguage(language);
-	await recognizer.start();
-}
-
-async function stopListening() {
-	await recognizer?.stop();
-}
-
-onDestroy(() => {
-	recognizer?.dispose();
-});
+	onDestroy(() => {
+		recognizer?.dispose();
+	});
 </script>
 
 <main>

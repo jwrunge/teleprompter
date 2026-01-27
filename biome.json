@@ -6,8 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!!**/dist"],
-		"experimentalScannerIgnores": ["**/*.svelte"]
+		"includes": ["**", "!!**/dist", "!!**/*.svelte"]
 	},
 	"formatter": {
 		"enabled": true,

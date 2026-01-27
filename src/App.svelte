@@ -2,7 +2,7 @@
 	import { onDestroy } from "svelte";
 	import Camera from "./camera/Camera.svelte";
 	import Files from "./files/Files.svelte";
-	import { SpeechRecognizerMgr } from "./lib/speech";
+	import { SpeechRecognizerMgr } from "./lib/speech/index.svelte";
 
 	const show = $state<"files" | "voice">("files");
 	const recognizer = new SpeechRecognizerMgr();

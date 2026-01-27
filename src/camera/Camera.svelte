@@ -1,84 +1,93 @@
 <script lang="ts">
-import { onDestroy, onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 
-const videoEl: HTMLVideoElement | null = null;
-let stream: MediaStream | null = null;
-let errorMessage: string | null = null;
-let isStarting = false;
+	let videoEl = $state<HTMLVideoElement | null>(null);
+	let stream: MediaStream | null = null;
+	let errorMessage = $state<string | null>(null);
+	let isStarting = $state(false);
 
-export const autoplay = true;
-export const muted = true;
-export const playsInline = true;
-export let facingMode: "user" | "environment" = "user";
+	let {
+		autoplay,
+		muted,
+		playsInline,
+		facingMode,
+	}: {
+		autoplay?: boolean;
+		muted?: boolean;
+		playsInline?: boolean;
+		facingMode?: "user" | "environment";
+	} = $props();
 
-async function start() {
-	if (isStarting) return;
-	isStarting = true;
-	errorMessage = null;
+	async function start() {
+		if (isStarting) return;
+		isStarting = true;
+		errorMessage = null;
 
-	try {
-		stop();
+		try {
+			stop();
 
-		if (!navigator.mediaDevices?.getUserMedia) {
-			throw new Error("getUserMedia is not supported in this browser.");
+			if (!navigator.mediaDevices?.getUserMedia) {
+				throw new Error(
+					"getUserMedia is not supported in this browser.",
+				);
+			}
+
+			stream = await navigator.mediaDevices.getUserMedia({
+				video: { facingMode },
+				audio: false,
+			});
+
+			if (!videoEl) return;
+			videoEl.srcObject = stream;
+
+			if (autoplay) {
+				await videoEl.play();
+			}
+		} catch (err) {
+			errorMessage = err instanceof Error ? err.message : String(err);
+			stop();
+		} finally {
+			isStarting = false;
 		}
+	}
 
-		stream = await navigator.mediaDevices.getUserMedia({
-			video: { facingMode },
-			audio: false,
-		});
-
-		if (!videoEl) return;
-		videoEl.srcObject = stream;
-
-		if (autoplay) {
-			await videoEl.play();
+	function stop() {
+		if (stream) {
+			for (const track of stream.getTracks()) track.stop();
+			stream = null;
 		}
-	} catch (err) {
-		errorMessage = err instanceof Error ? err.message : String(err);
+		if (videoEl) {
+			videoEl.srcObject = null;
+		}
+	}
+
+	async function toggleFacingMode() {
+		facingMode = facingMode === "user" ? "environment" : "user";
+		await start();
+	}
+
+	onMount(() => {
+		if (autoplay) void start();
+	});
+
+	onDestroy(() => {
 		stop();
-	} finally {
-		isStarting = false;
-	}
-}
-
-function stop() {
-	if (stream) {
-		for (const track of stream.getTracks()) track.stop();
-		stream = null;
-	}
-	if (videoEl) {
-		videoEl.srcObject = null;
-	}
-}
-
-async function toggleFacingMode() {
-	facingMode = facingMode === "user" ? "environment" : "user";
-	await start();
-}
-
-onMount(() => {
-	if (autoplay) void start();
-});
-
-onDestroy(() => {
-	stop();
-});
+	});
 </script>
 
 <div class="camera">
 	<!-- svelte-ignore a11y_media_has_caption -->
-	<video
-		bind:this={videoEl}
-		{muted}
-		autoplay={autoplay}
-		playsinline={playsInline}
+	<video bind:this={videoEl} {muted} {autoplay} playsinline={playsInline}
 	></video>
 
 	<div class="controls">
-		<button type="button" on:click={start} disabled={isStarting}>Start</button>
-		<button type="button" on:click={stop}>Stop</button>
-		<button type="button" on:click={toggleFacingMode} disabled={isStarting}>Flip</button>
+		<button type="button" onclick={start} disabled={isStarting}
+			>Start</button
+		>
+		<button type="button" onclick={stop}>Stop</button>
+		<button type="button" onclick={toggleFacingMode} disabled={isStarting}
+			>Flip</button
+		>
 	</div>
 
 	{#if errorMessage}

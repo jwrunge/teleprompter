@@ -19,7 +19,6 @@ export class SpeechRecognizerMgr {
 	isSupported = true;
 
 	constructor(lang?: string) {
-		console.log("LANG", navigator.language);
 		const langValue = lang ?? navigator.language ?? "en-US";
 		this.language = langValue;
 

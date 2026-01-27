@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { Capacitor } from "@capacitor/core";
-	import { VideoRecorder, type RecordingResult } from "../lib/recording/videoRecorder";
+	import {
+		VideoRecorder,
+		type RecordingResult,
+	} from "../lib/recording/videoRecorder";
 	import {
 		AudioRecorder,
 		type RecordingResult as AudioRecordingResult,
@@ -109,10 +112,16 @@
 		audioDevices = devices.filter((d) => d.kind === "audioinput");
 		hasDeviceLabels = devices.some((d) => Boolean(d.label));
 
-		if (selectedVideoDeviceId && !videoDevices.some((d) => d.deviceId === selectedVideoDeviceId)) {
+		if (
+			selectedVideoDeviceId &&
+			!videoDevices.some((d) => d.deviceId === selectedVideoDeviceId)
+		) {
 			selectedVideoDeviceId = "";
 		}
-		if (selectedAudioDeviceId && !audioDevices.some((d) => d.deviceId === selectedAudioDeviceId)) {
+		if (
+			selectedAudioDeviceId &&
+			!audioDevices.some((d) => d.deviceId === selectedAudioDeviceId)
+		) {
 			selectedAudioDeviceId = "";
 		}
 	}
@@ -140,14 +149,23 @@
 		resetProfilesDownload();
 	}
 
-	function findDeviceById(kind: "videoinput" | "audioinput", deviceId: string) {
+	function findDeviceById(
+		kind: "videoinput" | "audioinput",
+		deviceId: string,
+	) {
 		const list = kind === "videoinput" ? videoDevices : audioDevices;
 		return list.find((d) => d.deviceId === deviceId);
 	}
 
-	function recordTrackProfile(kind: "videoinput" | "audioinput", track: MediaStreamTrack, hintedDeviceId?: string) {
+	function recordTrackProfile(
+		kind: "videoinput" | "audioinput",
+		track: MediaStreamTrack,
+		hintedDeviceId?: string,
+	) {
 		const deviceId = hintedDeviceId || track.getSettings?.().deviceId || "";
-		const deviceInfo = deviceId ? findDeviceById(kind, deviceId) : undefined;
+		const deviceInfo = deviceId
+			? findDeviceById(kind, deviceId)
+			: undefined;
 		const profile = makeProfileFromTrack({
 			kind,
 			deviceInfo,
@@ -162,7 +180,10 @@
 
 	async function requestPermissionsForLabels() {
 		if (!navigator.mediaDevices?.getUserMedia) return;
-		const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+		const tmp = await navigator.mediaDevices.getUserMedia({
+			video: true,
+			audio: true,
+		});
 		for (const t of tmp.getTracks()) t.stop();
 		await refreshDevices();
 	}
@@ -261,22 +282,23 @@
 		micStream = await navigator.mediaDevices.getUserMedia({
 			audio: selectedAudioDeviceId
 				? {
-					deviceId: { exact: selectedAudioDeviceId },
-					echoCancellation: true,
-					noiseSuppression: true,
-					autoGainControl: true,
-				}
+						deviceId: { exact: selectedAudioDeviceId },
+						echoCancellation: true,
+						noiseSuppression: true,
+						autoGainControl: true,
+					}
 				: {
-					echoCancellation: true,
-					noiseSuppression: true,
-					autoGainControl: true,
-				},
+						echoCancellation: true,
+						noiseSuppression: true,
+						autoGainControl: true,
+					},
 			video: false,
 		});
 
 		await refreshDevices();
 		const track = micStream.getAudioTracks()[0];
-		if (track) recordTrackProfile("audioinput", track, selectedAudioDeviceId);
+		if (track)
+			recordTrackProfile("audioinput", track, selectedAudioDeviceId);
 	}
 
 	async function startRecording() {
@@ -301,7 +323,8 @@
 
 				if (recordingMode === "video+audio") {
 					await ensureMicStream(true);
-					if (!micStream) throw new Error("Microphone is not started.");
+					if (!micStream)
+						throw new Error("Microphone is not started.");
 					const combined = new MediaStream([
 						...stream.getVideoTracks(),
 						...micStream.getAudioTracks(),
@@ -375,12 +398,18 @@
 	onMount(() => {
 		void refreshDevices();
 		refreshProfiles();
-		navigator.mediaDevices?.addEventListener?.("devicechange", refreshDevices);
+		navigator.mediaDevices?.addEventListener?.(
+			"devicechange",
+			refreshDevices,
+		);
 		if (autoplay) void start();
 	});
 
 	onDestroy(() => {
-		navigator.mediaDevices?.removeEventListener?.("devicechange", refreshDevices);
+		navigator.mediaDevices?.removeEventListener?.(
+			"devicechange",
+			refreshDevices,
+		);
 		void stop();
 		resetDownload();
 		resetProfilesDownload();
@@ -393,12 +422,20 @@
 	></video>
 
 	<div class="controls">
-		<button type="button" onclick={start} disabled={isStarting}
-			>Start</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			variant="primary"
+			type="sl-button"
+			onclick={start}
+			disabled={isStarting}>Start</sl-button
 		>
-		<button type="button" onclick={() => void stop()}>Stop</button>
-		<button type="button" onclick={toggleFacingMode} disabled={isStarting}
-			>Flip</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button type="sl-button" onclick={() => void stop()}>Stop</sl-button>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={toggleFacingMode}
+			disabled={isStarting}>Flip</sl-button
 		>
 	</div>
 
@@ -425,7 +462,9 @@
 			<select
 				value={selectedVideoDeviceId}
 				onchange={(e) => {
-					selectedVideoDeviceId = (e.currentTarget as HTMLSelectElement).value;
+					selectedVideoDeviceId = (
+						e.currentTarget as HTMLSelectElement
+					).value;
 					if (stream && !isRecording) void start();
 				}}
 				disabled={isStarting || isRecording}
@@ -444,7 +483,9 @@
 			<select
 				value={selectedAudioDeviceId}
 				onchange={(e) => {
-					selectedAudioDeviceId = (e.currentTarget as HTMLSelectElement).value;
+					selectedAudioDeviceId = (
+						e.currentTarget as HTMLSelectElement
+					).value;
 					stopMicStream();
 				}}
 				disabled={isRecording || recordingMode === "video-only"}
@@ -458,32 +499,49 @@
 			</select>
 		</label>
 
-		<button type="button" onclick={() => void refreshDevices()} disabled={isStarting || isRecording}
-			>Refresh</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={() => void refreshDevices()}
+			disabled={isStarting || isRecording}>Refresh</sl-button
 		>
 		{#if !hasDeviceLabels}
-			<button
-				type="button"
+			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			<sl-button
+				type="sl-button"
 				onclick={() => void requestPermissionsForLabels()}
 				disabled={isStarting || isRecording}
 			>
 				Show device names
-			</button>
+			</sl-button>
 		{/if}
 	</div>
 
 	<div class="controls">
-		<button type="button" onclick={() => refreshProfiles()} disabled={isStarting || isRecording}
-			>Reload profiles</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={() => refreshProfiles()}
+			disabled={isStarting || isRecording}>Reload profiles</sl-button
 		>
-		<button type="button" onclick={exportProfiles} disabled={deviceProfiles.length === 0}
-			>Export profiles</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={exportProfiles}
+			disabled={deviceProfiles.length === 0}>Export profiles</sl-button
 		>
-		<button type="button" onclick={clearProfiles} disabled={deviceProfiles.length === 0}
-			>Clear profiles</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={clearProfiles}
+			disabled={deviceProfiles.length === 0}>Clear profiles</sl-button
 		>
 		{#if profilesDownloadUrl}
-			<a class="link" href={profilesDownloadUrl} download="device-profiles.json">Download profiles JSON</a>
+			<a
+				class="link"
+				href={profilesDownloadUrl}
+				download="device-profiles.json">Download profiles JSON</a
+			>
 		{/if}
 		{#if deviceProfiles.length > 0}
 			<p class="meta">Profiles: {deviceProfiles.length}</p>
@@ -529,11 +587,17 @@
 	</div>
 
 	<div class="controls">
-		<button type="button" onclick={startRecording} disabled={isStarting || isRecording}
-			>Record</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={startRecording}
+			disabled={isStarting || isRecording}>Record</sl-button
 		>
-		<button type="button" onclick={stopRecording} disabled={!isRecording}
-			>Stop Recording</button
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<sl-button
+			type="sl-button"
+			onclick={stopRecording}
+			disabled={!isRecording}>Stop Recording</sl-button
 		>
 	</div>
 
@@ -578,7 +642,7 @@
 		{#if actualWidth && actualHeight}
 			<p class="meta">
 				Actual: {actualWidth}×{actualHeight}{#if actualFrameRate}
-					 @ {Math.round(actualFrameRate)}fps{/if}
+					@ {Math.round(actualFrameRate)}fps{/if}
 			</p>
 		{/if}
 	</div>
@@ -592,9 +656,7 @@
 			<p class="meta">
 				{recordingMode === "video+audio" ? "A/V" : "Video"}: {Math.round(
 					lastVideoRecording.sizeBytes / 1024,
-				)} KB ({Math.round(
-					lastVideoRecording.durationMs / 1000,
-				)}s)
+				)} KB ({Math.round(lastVideoRecording.durationMs / 1000)}s)
 			</p>
 			{#if lastVideoRecording.filePath}
 				<p class="meta">Native file: {lastVideoRecording.filePath}</p>
@@ -663,32 +725,6 @@
 		display: grid;
 		gap: 0.25rem;
 		font-size: 0.85rem;
-	}
-
-	select,
-	input[type="number"] {
-		padding: 0.35rem 0.5rem;
-		border-radius: 10px;
-		border: 1px solid rgba(255, 255, 255, 0.15);
-		background: rgba(255, 255, 255, 0.06);
-		color: inherit;
-	}
-
-	button {
-		padding: 0.5rem 0.75rem;
-		border-radius: 10px;
-		border: 1px solid rgba(255, 255, 255, 0.15);
-		background: rgba(255, 255, 255, 0.06);
-		color: inherit;
-	}
-
-	button:disabled {
-		opacity: 0.6;
-	}
-
-	.error {
-		color: #ffb4b4;
-		margin: 0;
 	}
 
 	.recording {

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onDestroy } from "svelte";
+	import "@shoelace-style/shoelace/dist/components/switch/switch.js";
+	import { onDestroy, onMount } from "svelte";
 	import Camera from "./camera/Camera.svelte";
 	import Files from "./files/Files.svelte";
 	import { SpeechRecognizerMgr } from "./lib/speech/index.svelte";
@@ -7,16 +8,64 @@
 	const show = $state<"files" | "voice">("files");
 	const recognizer = new SpeechRecognizerMgr();
 
+	const THEME_STORAGE_KEY = "theme";
+	const getRootEl = () =>
+		typeof document !== "undefined" ? document.documentElement : null;
+
+	let dark = $state(false);
+	let hydrated = false;
+
+	function applyTheme(isDark: boolean) {
+		const root = getRootEl();
+		if (!root) return;
+
+		root.classList.toggle("sl-theme-dark", isDark);
+		root.classList.toggle("sl-theme-light", !isDark);
+		root.style.colorScheme = isDark ? "dark" : "light";
+	}
+
+	onMount(() => {
+		const saved = localStorage.getItem(THEME_STORAGE_KEY);
+		if (saved === "dark" || saved === "light") {
+			dark = saved === "dark";
+		} else {
+			dark =
+				window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ??
+				false;
+		}
+		hydrated = true;
+	});
+
+	$effect(() => {
+		if (!hydrated) return;
+		applyTheme(dark);
+		try {
+			localStorage.setItem(THEME_STORAGE_KEY, dark ? "dark" : "light");
+		} catch {
+			// ignore (e.g. storage disabled)
+		}
+	});
+
 	onDestroy(() => {
 		recognizer?.dispose();
 	});
 </script>
 
 <main>
+	<header class="toolbar">
+		<sl-switch
+			size="small"
+			checked={dark}
+			onsl-change={(event: Event) => {
+				dark = Boolean((event.target as any)?.checked);
+			}}
+		>
+			Dark
+		</sl-switch>
+	</header>
+
 	<section id="camera">
-		<sl-icon name="0-circle"></sl-icon>
 		<Camera />
-		<sl-input></sl-input>
 	</section>
 
 	{#if show === "files"}
@@ -85,6 +134,13 @@
 </main>
 
 <style>
+	.toolbar {
+		position: fixed;
+		top: 0.75rem;
+		right: 0.75rem;
+		z-index: 10;
+	}
+
 	main {
 		width: 100%;
 		height: 100%;

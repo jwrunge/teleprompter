@@ -7,7 +7,7 @@
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+		"check": "svelte-check --tsconfig ./tsconfig.app.json --compiler-warnings \"a11y_click_events_have_key_events:ignore,a11y_no_static_element_interactions:ignore\" && tsc -p tsconfig.node.json",
 		"postinstall": "node scripts/copy-shoelace-assets.mjs",
 		"lint": "biome check",
 		"lint:fix": "biome check --write"

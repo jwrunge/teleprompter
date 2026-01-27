@@ -28,69 +28,53 @@
 			<h1>Voice (Streaming)</h1>
 			<div class="row">
 				<label>
-					<span>Backend</span>
-					<select
-						bind:value={backend}
-						onchange={() => {
-							recognizer?.dispose();
-							recognizer = null;
-							recState = "idle";
-							partial = "";
-							lastError = null;
-						}}
-					>
-						<option value="auto">auto</option>
-						<option value="web">web</option>
-						<option value="native">native (stub)</option>
-					</select>
-				</label>
-
-				<label>
 					<span>Language</span>
-					<input bind:value={language} placeholder="en-US" />
+					<input
+						bind:value={recognizer.language}
+						placeholder="en-US"
+					/>
 				</label>
 			</div>
 
 			<div class="row">
 				<button
 					type="button"
-					onclick={startListening}
-					disabled={!isSupported ||
-						recState === "starting" ||
-						recState === "listening"}
+					onclick={() => recognizer.listen()}
+					disabled={!recognizer.isSupported ||
+						recognizer.state === "starting" ||
+						recognizer.state === "listening"}
 				>
 					Start
 				</button>
 				<button
 					type="button"
-					onclick={stopListening}
-					disabled={recState !== "listening" &&
-						recState !== "starting"}
+					onclick={recognizer.stop}
+					disabled={recognizer.state !== "listening" &&
+						recognizer.state !== "starting"}
 				>
 					Stop
 				</button>
 				<div class="meta">
-					<div><strong>State:</strong> {recState}</div>
-					<div><strong>Backend:</strong> {backend}</div>
+					<div><strong>State:</strong> {recognizer.state}</div>
 				</div>
 			</div>
 
-			{#if lastError}
-				<p class="error">{lastError}</p>
+			{#if recognizer.lastError}
+				<p class="error">{recognizer.lastError}</p>
 			{/if}
 
 			<div class="panel">
 				<div class="label">Partial</div>
-				<div class="text">{partial || "…"}</div>
+				<div class="text">{recognizer.partial || "…"}</div>
 			</div>
 
 			<div class="panel">
 				<div class="label">Final</div>
-				{#if finals.length === 0}
+				{#if recognizer.finals.length === 0}
 					<div class="text">No transcripts yet.</div>
 				{:else}
 					<ul>
-						{#each finals as line (line)}
+						{#each recognizer.finals as line (line)}
 							<li>{line}</li>
 						{/each}
 					</ul>

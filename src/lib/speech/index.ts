@@ -8,53 +8,51 @@ import type {
 } from "./types";
 import { WebSpeechRecognizer } from "./webSpeechRecognizer";
 
-export type SpeechBackendPreference = "auto" | "web" | "native";
-
 export class SpeechRecognizerMgr {
 	#recognizer: SpeechRecognizer;
-	#backend: string = "auto";
-	#partial = "";
-	#finals: string[] = [];
-	#language = "en-US";
-	#recState: SpeechRecognizerState = "idle";
-	#lastError: string | null = null;
 
+	finals: string[] = [];
+	partial = "";
+	lastError: string | null = null;
+	state: SpeechRecognizerState = "idle";
+	language = $state("en-US");
 	isSupported = true;
 
-	constructor() {
+	constructor(lang?: string) {
+		console.log("LANG", navigator.language);
+		const langValue = lang ?? navigator.language ?? "en-US";
+		this.language = langValue;
+
 		this.#recognizer = this.#create(
 			{
 				onStateChange: (s) => {
-					this.#recState = s;
+					this.state = s;
 				},
 				onPartial: (text) => {
-					this.#partial = text;
+					this.partial = text;
 				},
 				onFinal: (text) => {
-					this.#finals = [text, ...this.#finals];
-					this.#partial = "";
+					this.finals = [text, ...this.finals];
+					this.partial = "";
 				},
 				onError: (err) => {
-					this.#lastError = err instanceof Error ? err.message : String(err);
+					this.lastError = err instanceof Error ? err.message : String(err);
 				},
 			},
-			{ language: this.#language, interimResults: true, continuous: true },
-			this.#backend as "auto" | "web" | "native",
+			{ language: langValue, interimResults: true, continuous: true },
 		);
 
-		this.#backend = this.#recognizer.backend;
 		this.isSupported = this.#recognizer.isSupported;
 		if (!this.isSupported) {
-			this.#lastError = "Speech recognition not supported in this environment.";
+			this.lastError = "Speech recognition not supported in this environment.";
 		}
 	}
 
 	#create(
 		events: SpeechRecognizerEvents,
 		options: SpeechRecognizerOptions = {},
-		preference: SpeechBackendPreference = "auto",
 	): SpeechRecognizer {
-		if (Capacitor.isNativePlatform() || preference === "native") {
+		if (Capacitor.isNativePlatform()) {
 			const recognizer = new CapacitorNativeRecognizer(events);
 			recognizer.setLanguage(options.language ?? "en-US");
 			return recognizer;
@@ -64,9 +62,9 @@ export class SpeechRecognizerMgr {
 	}
 
 	async listen() {
-		this.#lastError = null;
+		this.lastError = null;
 		if (!this.#recognizer.isSupported) return;
-		this.#recognizer.setLanguage(this.#language);
+		this.#recognizer.setLanguage(this.language);
 		await this.#recognizer.start();
 	}
 

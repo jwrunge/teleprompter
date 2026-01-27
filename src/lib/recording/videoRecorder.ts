@@ -12,6 +12,7 @@ type RecorderState = "idle" | "recording" | "stopping";
 export type RecordingResult = {
 	blob: Blob;
 	mimeType: string;
+	fileName: string;
 	sizeBytes: number;
 	durationMs: number;
 	filePath?: string;
@@ -113,6 +114,7 @@ export class VideoRecorder {
 					resolve({
 						blob,
 						mimeType: this.mimeType,
+						fileName: this.fileName,
 						sizeBytes: blob.size,
 						durationMs,
 						filePath,

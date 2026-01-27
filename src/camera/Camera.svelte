@@ -7,6 +7,8 @@
 		type RecordingResult as AudioRecordingResult,
 	} from "../lib/recording/audioRecorder";
 
+	type RecordingMode = "video+audio" | "video-only" | "audio-only";
+
 	let videoEl: HTMLVideoElement | null = null;
 	let stream: MediaStream | null = null;
 	let micStream: MediaStream | null = null;
@@ -21,6 +23,12 @@
 	let videoDownloadUrl = $state<string | null>(null);
 	let audioDownloadUrl = $state<string | null>(null);
 
+	let videoDevices = $state<MediaDeviceInfo[]>([]);
+	let audioDevices = $state<MediaDeviceInfo[]>([]);
+	let selectedVideoDeviceId = $state<string>("");
+	let selectedAudioDeviceId = $state<string>("");
+	let hasDeviceLabels = $state(false);
+
 	let {
 		autoplay = true,
 		muted = true,
@@ -29,7 +37,7 @@
 		videoPreset = "720p",
 		frameRate = 30,
 		recordingBitsPerSecond = 8_000_000,
-		micEnabled = true,
+		recordingMode = "video+audio",
 		audioBitsPerSecond = 128_000,
 	}: {
 		autoplay?: boolean;
@@ -39,7 +47,7 @@
 		videoPreset?: "source" | "480p" | "720p" | "1080p";
 		frameRate?: number;
 		recordingBitsPerSecond?: number;
-		micEnabled?: boolean;
+		recordingMode?: RecordingMode;
 		audioBitsPerSecond?: number;
 	} = $props();
 
@@ -47,10 +55,8 @@
 	let actualHeight = $state<number | null>(null);
 	let actualFrameRate = $state<number | null>(null);
 
-	function desiredConstraints() {
-		if (videoPreset === "source") {
-			return { facingMode } as const;
-		}
+	function baseVideoConstraints() {
+		if (videoPreset === "source") return {} as const;
 
 		const presetMap = {
 			"480p": { width: 854, height: 480 },
@@ -60,11 +66,53 @@
 
 		const preset = presetMap[videoPreset];
 		return {
-			facingMode,
 			width: { ideal: preset.width },
 			height: { ideal: preset.height },
 			frameRate: frameRate ? { ideal: frameRate } : undefined,
 		} as const;
+	}
+
+	function desiredVideoConstraints() {
+		const base = baseVideoConstraints();
+		if (selectedVideoDeviceId) {
+			return {
+				...base,
+				deviceId: { exact: selectedVideoDeviceId },
+			} as const;
+		}
+		return {
+			...base,
+			facingMode,
+		} as const;
+	}
+
+	function deviceLabel(dev: MediaDeviceInfo, fallback: string) {
+		const label = dev.label?.trim();
+		if (label) return label;
+		const shortId = dev.deviceId ? dev.deviceId.slice(-4) : "";
+		return shortId ? `${fallback} (${shortId})` : fallback;
+	}
+
+	async function refreshDevices() {
+		if (!navigator.mediaDevices?.enumerateDevices) return;
+		const devices = await navigator.mediaDevices.enumerateDevices();
+		videoDevices = devices.filter((d) => d.kind === "videoinput");
+		audioDevices = devices.filter((d) => d.kind === "audioinput");
+		hasDeviceLabels = devices.some((d) => Boolean(d.label));
+
+		if (selectedVideoDeviceId && !videoDevices.some((d) => d.deviceId === selectedVideoDeviceId)) {
+			selectedVideoDeviceId = "";
+		}
+		if (selectedAudioDeviceId && !audioDevices.some((d) => d.deviceId === selectedAudioDeviceId)) {
+			selectedAudioDeviceId = "";
+		}
+	}
+
+	async function requestPermissionsForLabels() {
+		if (!navigator.mediaDevices?.getUserMedia) return;
+		const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+		for (const t of tmp.getTracks()) t.stop();
+		await refreshDevices();
 	}
 
 	async function start() {
@@ -83,16 +131,20 @@
 
 			try {
 				stream = await navigator.mediaDevices.getUserMedia({
-					video: desiredConstraints(),
+					video: desiredVideoConstraints(),
 					audio: false,
 				});
 			} catch (err) {
 				// If constraints are too strict (common on mobile), fall back to default camera.
 				stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode },
+					video: selectedVideoDeviceId
+						? { deviceId: { exact: selectedVideoDeviceId } }
+						: { facingMode },
 					audio: false,
 				});
 			}
+
+			await refreshDevices();
 
 			if (!videoEl) return;
 			videoEl.srcObject = stream;
@@ -147,55 +199,78 @@
 		micStream = null;
 	}
 
-	async function ensureMicStream() {
-		if (!micEnabled) return;
+	async function ensureMicStream(required: boolean) {
+		if (!required) return;
 		if (micStream) return;
 		if (!navigator.mediaDevices?.getUserMedia) {
 			throw new Error("getUserMedia is not supported in this browser.");
 		}
 		micStream = await navigator.mediaDevices.getUserMedia({
-			audio: {
-				echoCancellation: true,
-				noiseSuppression: true,
-				autoGainControl: true,
-			},
+			audio: selectedAudioDeviceId
+				? {
+					deviceId: { exact: selectedAudioDeviceId },
+					echoCancellation: true,
+					noiseSuppression: true,
+					autoGainControl: true,
+				}
+				: {
+					echoCancellation: true,
+					noiseSuppression: true,
+					autoGainControl: true,
+				},
 			video: false,
 		});
+
+		await refreshDevices();
 	}
 
 	async function startRecording() {
 		recordError = null;
 		resetDownload();
 
-		if (!stream) {
-			await start();
-		}
-		if (!stream) {
-			recordError = "Camera is not started.";
-			return;
-		}
-
 		try {
-			await ensureMicStream();
-
-			videoRecorder = new VideoRecorder({
-				stream,
-				timesliceMs: 1000,
-				directory: "Documents",
-				bitsPerSecond: recordingBitsPerSecond,
-			});
-
-			if (micEnabled && micStream) {
+			if (recordingMode === "audio-only") {
+				await ensureMicStream(true);
+				if (!micStream) throw new Error("Microphone is not started.");
 				audioRecorder = new AudioRecorder({
 					stream: micStream,
 					timesliceMs: 1000,
 					directory: "Documents",
 					audioBitsPerSecond,
 				});
+				audioRecorder.start();
+				videoRecorder = null;
+			} else {
+				if (!stream) await start();
+				if (!stream) throw new Error("Camera is not started.");
+
+				if (recordingMode === "video+audio") {
+					await ensureMicStream(true);
+					if (!micStream) throw new Error("Microphone is not started.");
+					const combined = new MediaStream([
+						...stream.getVideoTracks(),
+						...micStream.getAudioTracks(),
+					]);
+					videoRecorder = new VideoRecorder({
+						stream: combined,
+						timesliceMs: 1000,
+						directory: "Documents",
+						bitsPerSecond: recordingBitsPerSecond,
+						fileName: `av-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`,
+					});
+				} else {
+					videoRecorder = new VideoRecorder({
+						stream,
+						timesliceMs: 1000,
+						directory: "Documents",
+						bitsPerSecond: recordingBitsPerSecond,
+					});
+				}
+
+				videoRecorder.start();
+				audioRecorder = null;
 			}
 
-			videoRecorder.start();
-			audioRecorder?.start();
 			isRecording = true;
 		} catch (err) {
 			recordError = err instanceof Error ? err.message : String(err);
@@ -209,36 +284,22 @@
 	async function stopRecording() {
 		if (!isRecording) return;
 		try {
-			const videoStop = videoRecorder?.stop();
-			const audioStop = audioRecorder?.stop();
-
-			const [videoResult, audioResult] = await Promise.allSettled([
-				videoStop,
-				audioStop,
-			]);
-
-			if (videoResult.status === "fulfilled" && videoResult.value) {
-				lastVideoRecording = videoResult.value;
+			if (audioRecorder) {
+				const result = await audioRecorder.stop();
+				lastAudioRecording = result;
 				if (!Capacitor.isNativePlatform()) {
-					videoDownloadUrl = URL.createObjectURL(videoResult.value.blob);
+					audioDownloadUrl = URL.createObjectURL(result.blob);
 				}
-			} else if (videoResult.status === "rejected") {
-				recordError =
-					videoResult.reason instanceof Error
-						? videoResult.reason.message
-						: String(videoResult.reason);
-			}
-
-			if (audioResult.status === "fulfilled" && audioResult.value) {
-				lastAudioRecording = audioResult.value;
+				lastVideoRecording = null;
+				videoDownloadUrl = null;
+			} else if (videoRecorder) {
+				const result = await videoRecorder.stop();
+				lastVideoRecording = result;
 				if (!Capacitor.isNativePlatform()) {
-					audioDownloadUrl = URL.createObjectURL(audioResult.value.blob);
+					videoDownloadUrl = URL.createObjectURL(result.blob);
 				}
-			} else if (audioResult.status === "rejected") {
-				recordError =
-					audioResult.reason instanceof Error
-						? audioResult.reason.message
-						: String(audioResult.reason);
+				lastAudioRecording = null;
+				audioDownloadUrl = null;
 			}
 		} catch (err) {
 			recordError = err instanceof Error ? err.message : String(err);
@@ -251,15 +312,19 @@
 	}
 
 	async function toggleFacingMode() {
+		selectedVideoDeviceId = "";
 		facingMode = facingMode === "user" ? "environment" : "user";
 		await start();
 	}
 
 	onMount(() => {
+		void refreshDevices();
+		navigator.mediaDevices?.addEventListener?.("devicechange", refreshDevices);
 		if (autoplay) void start();
 	});
 
 	onDestroy(() => {
+		navigator.mediaDevices?.removeEventListener?.("devicechange", refreshDevices);
 		void stop();
 		resetDownload();
 	});
@@ -281,36 +346,73 @@
 	</div>
 
 	<div class="controls">
-		<label class="field" style="grid-auto-flow: column; align-items: center; gap: 0.5rem;">
-			<input
-				type="checkbox"
-				checked={micEnabled}
+		<label class="field">
+			<span>Mode</span>
+			<select
+				value={recordingMode}
 				onchange={(e) => {
-					micEnabled = (e.currentTarget as HTMLInputElement).checked;
-					if (!micEnabled) stopMicStream();
+					recordingMode = (e.currentTarget as HTMLSelectElement)
+						.value as RecordingMode;
+					stopMicStream();
 				}}
 				disabled={isRecording}
-			/>
-			<span>Mic</span>
+			>
+				<option value="video+audio">video + audio (single file)</option>
+				<option value="video-only">video only</option>
+				<option value="audio-only">audio only</option>
+			</select>
 		</label>
 
 		<label class="field">
-			<span>Audio bitrate (kbps)</span>
+			<span>Camera</span>
 			<select
-				value={String(audioBitsPerSecond)}
+				value={selectedVideoDeviceId}
 				onchange={(e) => {
-					audioBitsPerSecond = Number(
-						(e.currentTarget as HTMLSelectElement).value,
-					);
+					selectedVideoDeviceId = (e.currentTarget as HTMLSelectElement).value;
+					if (stream && !isRecording) void start();
 				}}
-				disabled={isRecording || !micEnabled}
+				disabled={isStarting || isRecording}
 			>
-				<option value="64000">64</option>
-				<option value="96000">96</option>
-				<option value="128000">128</option>
-				<option value="192000">192</option>
+				<option value="">Auto (front/back)</option>
+				{#each videoDevices as dev, idx}
+					<option value={dev.deviceId}>
+						{deviceLabel(dev, `Camera ${idx + 1}`)}
+					</option>
+				{/each}
 			</select>
 		</label>
+
+		<label class="field">
+			<span>Mic</span>
+			<select
+				value={selectedAudioDeviceId}
+				onchange={(e) => {
+					selectedAudioDeviceId = (e.currentTarget as HTMLSelectElement).value;
+					stopMicStream();
+				}}
+				disabled={isRecording || recordingMode === "video-only"}
+			>
+				<option value="">Default mic</option>
+				{#each audioDevices as dev, idx}
+					<option value={dev.deviceId}>
+						{deviceLabel(dev, `Mic ${idx + 1}`)}
+					</option>
+				{/each}
+			</select>
+		</label>
+
+		<button type="button" onclick={() => void refreshDevices()} disabled={isStarting || isRecording}
+			>Refresh</button
+		>
+		{#if !hasDeviceLabels}
+			<button
+				type="button"
+				onclick={() => void requestPermissionsForLabels()}
+				disabled={isStarting || isRecording}
+			>
+				Show device names
+			</button>
+		{/if}
 	</div>
 
 	<div class="controls">
@@ -370,13 +472,31 @@
 						(e.currentTarget as HTMLSelectElement).value,
 					);
 				}}
-				disabled={isRecording}
+				disabled={isRecording || recordingMode === "audio-only"}
 			>
 				<option value="2500000">2.5</option>
 				<option value="5000000">5</option>
 				<option value="8000000">8</option>
 				<option value="12000000">12</option>
 				<option value="20000000">20</option>
+			</select>
+		</label>
+
+		<label class="field">
+			<span>Audio bitrate (kbps)</span>
+			<select
+				value={String(audioBitsPerSecond)}
+				onchange={(e) => {
+					audioBitsPerSecond = Number(
+						(e.currentTarget as HTMLSelectElement).value,
+					);
+				}}
+				disabled={isRecording || recordingMode === "video-only"}
+			>
+				<option value="64000">64</option>
+				<option value="96000">96</option>
+				<option value="128000">128</option>
+				<option value="192000">192</option>
 			</select>
 		</label>
 
@@ -395,7 +515,9 @@
 	{#if lastVideoRecording}
 		<div class="recording">
 			<p class="meta">
-				Video: {Math.round(lastVideoRecording.sizeBytes / 1024)} KB ({Math.round(
+				{recordingMode === "video+audio" ? "A/V" : "Video"}: {Math.round(
+					lastVideoRecording.sizeBytes / 1024,
+				)} KB ({Math.round(
 					lastVideoRecording.durationMs / 1000,
 				)}s)
 			</p>
@@ -406,9 +528,9 @@
 				<a
 					class="link"
 					href={videoDownloadUrl}
-					download={lastVideoRecording.mimeType.includes("mp4") ? "recording.mp4" : "recording.webm"}
+					download={lastVideoRecording.fileName}
 				>
-					Download
+					Download {recordingMode === "video+audio" ? "A/V" : "video"}
 				</a>
 			{/if}
 		</div>

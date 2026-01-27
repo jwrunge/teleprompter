@@ -1,5 +1,12 @@
 import { Capacitor } from "@capacitor/core";
 
+import {
+	mimeToExtension,
+	pickSupportedMimeType,
+	type RecordingDirectory,
+	saveToCapacitorFilesystem,
+} from "./recordingUtils";
+
 type RecorderState = "idle" | "recording" | "stopping";
 
 export type RecordingResult = {
@@ -17,79 +24,8 @@ export type VideoRecorderOptions = {
 	mimeType?: string;
 	bitsPerSecond?: number;
 	fileName?: string;
-	directory?: "Documents" | "Data" | "Cache";
+	directory?: RecordingDirectory;
 };
-
-function pickMimeType(preferred?: string): string {
-	if (typeof MediaRecorder === "undefined") {
-		throw new Error("MediaRecorder is not available in this environment.");
-	}
-
-	const candidates = [
-		preferred,
-		"video/webm;codecs=vp9,opus",
-		"video/webm;codecs=vp8,opus",
-		"video/webm",
-		"video/mp4",
-	].filter(Boolean) as string[];
-
-	for (const candidate of candidates) {
-		if (MediaRecorder.isTypeSupported(candidate)) return candidate;
-	}
-
-	throw new Error("No supported MediaRecorder mimeType found on this device.");
-}
-
-function blobToBase64(blob: Blob): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onerror = () =>
-			reject(reader.error ?? new Error("Failed reading blob"));
-		reader.onload = () => {
-			const dataUrl = String(reader.result ?? "");
-			const commaIdx = dataUrl.indexOf(",");
-			resolve(commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl);
-		};
-		reader.readAsDataURL(blob);
-	});
-}
-
-async function saveToCapacitorFilesystem(
-	blob: Blob,
-	fileName: string,
-	directory: VideoRecorderOptions["directory"],
-): Promise<{ filePath: string; fileUri?: string }> {
-	const { Filesystem, Directory } = await import("@capacitor/filesystem");
-
-	const base64 = await blobToBase64(blob);
-	const dir =
-		directory === "Cache"
-			? Directory.Cache
-			: directory === "Data"
-				? Directory.Data
-				: Directory.Documents;
-
-	const filePath = `recordings/${fileName}`;
-	await Filesystem.writeFile({
-		path: filePath,
-		directory: dir,
-		data: base64,
-		recursive: true,
-	});
-
-	let fileUri: string | undefined;
-	try {
-		const uriResult = await Filesystem.getUri({
-			path: filePath,
-			directory: dir,
-		});
-		fileUri = uriResult.uri;
-	} catch {
-		// Optional
-	}
-
-	return { filePath, fileUri };
-}
 
 export class VideoRecorder {
 	private mediaRecorder: MediaRecorder;
@@ -100,7 +36,7 @@ export class VideoRecorder {
 	private timesliceMs: number;
 	private bitsPerSecond?: number;
 	private fileName: string;
-	private directory: VideoRecorderOptions["directory"];
+	private directory: RecordingDirectory;
 
 	get state() {
 		return this._state;
@@ -111,12 +47,18 @@ export class VideoRecorder {
 	}
 
 	constructor(options: VideoRecorderOptions) {
-		this.mimeType = pickMimeType(options.mimeType);
+		this.mimeType = pickSupportedMimeType(options.mimeType, [
+			"video/webm;codecs=vp9,opus",
+			"video/webm;codecs=vp8,opus",
+			"video/webm",
+			"video/mp4",
+		]);
 		this.timesliceMs = options.timesliceMs ?? 1000;
 		this.bitsPerSecond = options.bitsPerSecond;
+		const defaultExt = mimeToExtension(this.mimeType);
 		this.fileName =
 			options.fileName ??
-			`recording-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`;
+			`recording-${new Date().toISOString().replace(/[:.]/g, "-")}.${defaultExt}`;
 		this.directory = options.directory ?? "Documents";
 
 		this.mediaRecorder = new MediaRecorder(options.stream, {

@@ -417,96 +417,88 @@
 </script>
 
 <div class="camera">
-	<!-- svelte-ignore a11y_media_has_caption -->
 	<video bind:this={videoEl} {muted} {autoplay} playsinline={playsInline}
 	></video>
 
 	<div class="controls">
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			variant="primary"
-			type="sl-button"
+			type="button"
 			onclick={start}
-			disabled={isStarting}>Start</sl-button
+			disabled={isStarting}
 		>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<sl-button type="sl-button" onclick={() => void stop()}>Stop</sl-button>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			Start
+		</sl-button>
+		<sl-button type="button" onclick={() => void stop()}>Stop</sl-button>
 		<sl-button
-			type="sl-button"
+			type="button"
 			onclick={toggleFacingMode}
-			disabled={isStarting}>Flip</sl-button
+			disabled={isStarting}
 		>
+			Flip
+		</sl-button>
 	</div>
 
 	<div class="controls">
-		<label class="field">
-			<span>Mode</span>
-			<select
-				value={recordingMode}
-				onchange={(e) => {
-					recordingMode = (e.currentTarget as HTMLSelectElement)
-						.value as RecordingMode;
-					stopMicStream();
-				}}
-				disabled={isRecording}
+		<sl-select
+			label="Recording Mode"
+			value={recordingMode}
+			onchange={(e) => {
+				recordingMode = (e.currentTarget as HTMLSelectElement)
+					.value as RecordingMode;
+				stopMicStream();
+			}}
+			disabled={isRecording}
+		>
+			<sl-option value="video+audio"
+				>video + audio (single file)</sl-option
 			>
-				<option value="video+audio">video + audio (single file)</option>
-				<option value="video-only">video only</option>
-				<option value="audio-only">audio only</option>
-			</select>
-		</label>
+			<sl-option value="video-only">video only</sl-option>
+			<sl-option value="audio-only">audio only</sl-option>
+		</sl-select>
 
-		<label class="field">
-			<span>Camera</span>
-			<select
-				value={selectedVideoDeviceId}
-				onchange={(e) => {
-					selectedVideoDeviceId = (
-						e.currentTarget as HTMLSelectElement
-					).value;
-					if (stream && !isRecording) void start();
-				}}
-				disabled={isStarting || isRecording}
-			>
-				<option value="">Auto (front/back)</option>
-				{#each videoDevices as dev, idx}
-					<option value={dev.deviceId}>
-						{deviceLabel(dev, `Camera ${idx + 1}`)}
-					</option>
-				{/each}
-			</select>
-		</label>
+		<sl-select
+			label="Camera"
+			value={selectedVideoDeviceId}
+			onchange={(e) => {
+				selectedVideoDeviceId = (e.currentTarget as HTMLSelectElement)
+					.value;
+				if (stream && !isRecording) void start();
+			}}
+			disabled={isStarting || isRecording}
+		>
+			<sl-option value="">Auto (front/back)</sl-option>
+			{#each videoDevices as dev, idx}
+				<sl-option value={dev.deviceId}>
+					{deviceLabel(dev, `Camera ${idx + 1}`)}
+				</sl-option>
+			{/each}
+		</sl-select>
 
-		<label class="field">
-			<span>Mic</span>
-			<select
-				value={selectedAudioDeviceId}
-				onchange={(e) => {
-					selectedAudioDeviceId = (
-						e.currentTarget as HTMLSelectElement
-					).value;
-					stopMicStream();
-				}}
-				disabled={isRecording || recordingMode === "video-only"}
-			>
-				<option value="">Default mic</option>
-				{#each audioDevices as dev, idx}
-					<option value={dev.deviceId}>
-						{deviceLabel(dev, `Mic ${idx + 1}`)}
-					</option>
-				{/each}
-			</select>
-		</label>
+		<sl-select
+			label="Mic"
+			value={selectedAudioDeviceId}
+			onchange={(e) => {
+				selectedAudioDeviceId = (e.currentTarget as HTMLSelectElement)
+					.value;
+				stopMicStream();
+			}}
+			disabled={isRecording || recordingMode === "video-only"}
+		>
+			<sl-option value="">Default mic</sl-option>
+			{#each audioDevices as dev, idx}
+				<sl-option value={dev.deviceId}>
+					{deviceLabel(dev, `Mic ${idx + 1}`)}
+				</sl-option>
+			{/each}
+		</sl-select>
 
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			type="sl-button"
 			onclick={() => void refreshDevices()}
 			disabled={isStarting || isRecording}>Refresh</sl-button
 		>
 		{#if !hasDeviceLabels}
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 			<sl-button
 				type="sl-button"
 				onclick={() => void requestPermissionsForLabels()}
@@ -518,19 +510,16 @@
 	</div>
 
 	<div class="controls">
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			type="sl-button"
 			onclick={() => refreshProfiles()}
 			disabled={isStarting || isRecording}>Reload profiles</sl-button
 		>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			type="sl-button"
 			onclick={exportProfiles}
 			disabled={deviceProfiles.length === 0}>Export profiles</sl-button
 		>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			type="sl-button"
 			onclick={clearProfiles}
@@ -549,23 +538,21 @@
 	</div>
 
 	<div class="controls">
-		<label class="field">
-			<span>Resolution</span>
-			<select
-				value={videoPreset}
-				onchange={(e) => {
-					videoPreset = (e.currentTarget as HTMLSelectElement)
-						.value as typeof videoPreset;
-					if (stream) void start();
-				}}
-				disabled={isStarting || isRecording}
-			>
-				<option value="source">source</option>
-				<option value="480p">480p</option>
-				<option value="720p">720p</option>
-				<option value="1080p">1080p</option>
-			</select>
-		</label>
+		<sl-select
+			label="Resolution"
+			value={videoPreset}
+			onchange={(e) => {
+				videoPreset = (e.currentTarget as HTMLSelectElement)
+					.value as typeof videoPreset;
+				if (stream) void start();
+			}}
+			disabled={isStarting || isRecording}
+		>
+			<sl-option value="source">source</sl-option>
+			<sl-option value="480p">480p</sl-option>
+			<sl-option value="720p">720p</sl-option>
+			<sl-option value="1080p">1080p</sl-option>
+		</sl-select>
 
 		<label class="field">
 			<span>FPS</span>
@@ -587,13 +574,11 @@
 	</div>
 
 	<div class="controls">
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			type="sl-button"
 			onclick={startRecording}
 			disabled={isStarting || isRecording}>Record</sl-button
 		>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<sl-button
 			type="sl-button"
 			onclick={stopRecording}
@@ -602,42 +587,37 @@
 	</div>
 
 	<div class="controls">
-		<label class="field">
-			<span>Bitrate (Mbps)</span>
-			<select
-				value={String(recordingBitsPerSecond)}
-				onchange={(e) => {
-					recordingBitsPerSecond = Number(
-						(e.currentTarget as HTMLSelectElement).value,
-					);
-				}}
-				disabled={isRecording || recordingMode === "audio-only"}
-			>
-				<option value="2500000">2.5</option>
-				<option value="5000000">5</option>
-				<option value="8000000">8</option>
-				<option value="12000000">12</option>
-				<option value="20000000">20</option>
-			</select>
-		</label>
+		<sl-select
+			label="Bitrate (Mbps)"
+			value={String(recordingBitsPerSecond)}
+			onchange={(e) => {
+				recordingBitsPerSecond = Number(
+					(e.currentTarget as HTMLSelectElement).value,
+				);
+			}}
+			disabled={isRecording || recordingMode === "audio-only"}
+		>
+			<sl-option value="2500000">2.5</sl-option>
+			<sl-option value="5000000">5</sl-option>
+			<sl-option value="8000000">8</sl-option>
+			<sl-option value="12000000">12</sl-option>
+			<sl-option value="20000000">20</sl-option>
+		</sl-select>
 
-		<label class="field">
-			<span>Audio bitrate (kbps)</span>
-			<select
-				value={String(audioBitsPerSecond)}
-				onchange={(e) => {
-					audioBitsPerSecond = Number(
-						(e.currentTarget as HTMLSelectElement).value,
-					);
-				}}
-				disabled={isRecording || recordingMode === "video-only"}
-			>
-				<option value="64000">64</option>
-				<option value="96000">96</option>
-				<option value="128000">128</option>
-				<option value="192000">192</option>
-			</select>
-		</label>
+		<sl-select
+			label="Audio bitrate (kbps)"
+			value={String(audioBitsPerSecond)}
+			onchange={(e) => {
+				audioBitsPerSecond = Number(
+					(e.currentTarget as HTMLSelectElement).value,
+				);
+			}}
+		>
+			<sl-option value="64000">64</sl-option>
+			<sl-option value="96000">96</sl-option>
+			<sl-option value="128000">128</sl-option>
+			<sl-option value="192000">192</sl-option>
+		</sl-select>
 
 		{#if actualWidth && actualHeight}
 			<p class="meta">

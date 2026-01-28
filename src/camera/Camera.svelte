@@ -421,20 +421,11 @@
 	></video>
 
 	<div class="controls">
-		<sl-button
-			variant="primary"
-			type="button"
-			onclick={start}
-			disabled={isStarting}
-		>
+		<sl-button variant="primary" onclick={start} disabled={isStarting}>
 			Start
 		</sl-button>
 		<sl-button type="button" onclick={() => void stop()}>Stop</sl-button>
-		<sl-button
-			type="button"
-			onclick={toggleFacingMode}
-			disabled={isStarting}
-		>
+		<sl-button onclick={toggleFacingMode} disabled={isStarting}>
 			Flip
 		</sl-button>
 	</div>
@@ -443,9 +434,8 @@
 		<sl-select
 			label="Recording Mode"
 			value={recordingMode}
-			onchange={(e) => {
-				recordingMode = (e.currentTarget as HTMLSelectElement)
-					.value as RecordingMode;
+			onsl-change={(e) => {
+				recordingMode = e.currentTarget.value as RecordingMode;
 				stopMicStream();
 			}}
 			disabled={isRecording}
@@ -460,9 +450,9 @@
 		<sl-select
 			label="Camera"
 			value={selectedVideoDeviceId}
-			onchange={(e) => {
-				selectedVideoDeviceId = (e.currentTarget as HTMLSelectElement)
-					.value;
+			onsl-change={(e) => {
+				const v = e.currentTarget.value;
+				selectedVideoDeviceId = Array.isArray(v) ? (v[0] ?? "") : v;
 				if (stream && !isRecording) void start();
 			}}
 			disabled={isStarting || isRecording}
@@ -478,9 +468,9 @@
 		<sl-select
 			label="Mic"
 			value={selectedAudioDeviceId}
-			onchange={(e) => {
-				selectedAudioDeviceId = (e.currentTarget as HTMLSelectElement)
-					.value;
+			onsl-change={(e) => {
+				const v = e.currentTarget.value;
+				selectedAudioDeviceId = Array.isArray(v) ? (v[0] ?? "") : v;
 				stopMicStream();
 			}}
 			disabled={isRecording || recordingMode === "video-only"}
@@ -494,13 +484,11 @@
 		</sl-select>
 
 		<sl-button
-			type="sl-button"
 			onclick={() => void refreshDevices()}
 			disabled={isStarting || isRecording}>Refresh</sl-button
 		>
 		{#if !hasDeviceLabels}
 			<sl-button
-				type="sl-button"
 				onclick={() => void requestPermissionsForLabels()}
 				disabled={isStarting || isRecording}
 			>
@@ -511,17 +499,14 @@
 
 	<div class="controls">
 		<sl-button
-			type="sl-button"
 			onclick={() => refreshProfiles()}
 			disabled={isStarting || isRecording}>Reload profiles</sl-button
 		>
 		<sl-button
-			type="sl-button"
 			onclick={exportProfiles}
 			disabled={deviceProfiles.length === 0}>Export profiles</sl-button
 		>
 		<sl-button
-			type="sl-button"
 			onclick={clearProfiles}
 			disabled={deviceProfiles.length === 0}>Clear profiles</sl-button
 		>
@@ -541,9 +526,8 @@
 		<sl-select
 			label="Resolution"
 			value={videoPreset}
-			onchange={(e) => {
-				videoPreset = (e.currentTarget as HTMLSelectElement)
-					.value as typeof videoPreset;
+			onsl-change={(e) => {
+				videoPreset = e.currentTarget.value as typeof videoPreset;
 				if (stream) void start();
 			}}
 			disabled={isStarting || isRecording}
@@ -574,15 +558,11 @@
 	</div>
 
 	<div class="controls">
-		<sl-button
-			type="sl-button"
-			onclick={startRecording}
-			disabled={isStarting || isRecording}>Record</sl-button
+		<sl-button onclick={startRecording} disabled={isStarting || isRecording}
+			>Record</sl-button
 		>
-		<sl-button
-			type="sl-button"
-			onclick={stopRecording}
-			disabled={!isRecording}>Stop Recording</sl-button
+		<sl-button onclick={stopRecording} disabled={!isRecording}
+			>Stop Recording</sl-button
 		>
 	</div>
 
@@ -590,10 +570,8 @@
 		<sl-select
 			label="Bitrate (Mbps)"
 			value={String(recordingBitsPerSecond)}
-			onchange={(e) => {
-				recordingBitsPerSecond = Number(
-					(e.currentTarget as HTMLSelectElement).value,
-				);
+			onsl-change={(e) => {
+				recordingBitsPerSecond = Number(e.currentTarget.value);
 			}}
 			disabled={isRecording || recordingMode === "audio-only"}
 		>
@@ -607,10 +585,8 @@
 		<sl-select
 			label="Audio bitrate (kbps)"
 			value={String(audioBitsPerSecond)}
-			onchange={(e) => {
-				audioBitsPerSecond = Number(
-					(e.currentTarget as HTMLSelectElement).value,
-				);
+			onsl-change={(e) => {
+				audioBitsPerSecond = Number(e.currentTarget.value);
 			}}
 		>
 			<sl-option value="64000">64</sl-option>

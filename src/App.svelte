@@ -51,7 +51,7 @@
 					includeCamera={sections[0] === "camera"}
 					onadd={() => {
 						for (const view of sectionViews) {
-							if (!sections.includes(view)) {
+							if (!sections.includes(view) && view !== "camera") {
 								sections = [...sections, view];
 								break;
 							}

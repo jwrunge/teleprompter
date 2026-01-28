@@ -19,6 +19,7 @@ a {
 	text-decoration: inherit;
 }
 a:hover {
+	cursor: pointer;
 	color: var(--sl-color-primary-700);
 }
 

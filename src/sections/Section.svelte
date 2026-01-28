@@ -49,7 +49,7 @@
 	</section>
 {:else if view === "files"}
 	<section class="files p-1">
-		<Files state={null} />
+		<Files appState={null} />
 	</section>
 {:else if view === "voice"}
 	<section class="voice p-1"></section>

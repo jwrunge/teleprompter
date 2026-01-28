@@ -52,6 +52,10 @@
 	height: 100%;
 }
 
+.width-100 {
+	width: 100%;
+}
+
 .flex {
 	display: flex;
 
@@ -94,4 +98,16 @@
 	&.flex-column {
 		flex-direction: column;
 	}
+}
+
+.absolute {
+	position: absolute;
+}
+
+.sticky {
+	position: sticky;
+}
+
+.bottom-0 {
+	bottom: 0;
 }

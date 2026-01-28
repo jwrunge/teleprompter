@@ -538,23 +538,19 @@
 			<sl-option value="1080p">1080p</sl-option>
 		</sl-select>
 
-		<label class="field">
-			<span>FPS</span>
-			<input
-				type="number"
-				min="1"
-				max="60"
-				value={frameRate}
-				onchange={(e) => {
-					frameRate = Number(
-						(e.currentTarget as HTMLInputElement).value,
-					);
-					if (stream) void start();
-				}}
-				disabled={isStarting || isRecording}
-				style="width: 6rem;"
-			/>
-		</label>
+		<sl-input
+			label="FPS"
+			type="number"
+			min="1"
+			max="60"
+			value={frameRate}
+			onchange={(e) => {
+				frameRate = Number(e.currentTarget.value);
+				if (stream) void start();
+			}}
+			disabled={isStarting || isRecording}
+			style="width: 6rem;"
+		></sl-input>
 	</div>
 
 	<div class="controls">

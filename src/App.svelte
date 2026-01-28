@@ -5,6 +5,7 @@
 	import Section from "./sections/Section.svelte";
 	import { type SectionView } from "./sections/sections";
 
+	const mobileAspectRatio = 9 / 16;
 	const mainViews = ["record", "export"] as const;
 	type MainView = (typeof mainViews)[number];
 
@@ -13,10 +14,16 @@
 	let mainView = $state<MainView>("record");
 	let sections = $state<[SectionView, SectionView]>(["camera", "files"]);
 
+	let wWidth = $state(0);
+	let wHeight = $state(0);
+	let wAspectRatio = $derived(wHeight === 0 ? 1 : wWidth / wHeight);
+
 	onDestroy(() => {
 		recognizer?.dispose();
 	});
 </script>
+
+<svelte:window bind:innerWidth={wWidth} bind:innerHeight={wHeight} />
 
 <div class="flex flex-column height-100">
 	<header class="flex justify-between align-center pr-1">
@@ -38,10 +45,14 @@
 
 	<main>
 		{#if mainView === "record"}
-			<sl-split-panel>
+			<sl-split-panel
+				position="25"
+				vertical={wAspectRatio < mobileAspectRatio}
+			>
 				{#each sections as section, i}
-					<div class="height-100" slot={i === 0 ? "start" : "end"}>
-						<Section view={section} />
+					{@const first = i === 0}
+					<div class="height-100" slot={first ? "start" : "end"}>
+						<Section view={section} includeCamera={first} />
 					</div>
 				{/each}
 			</sl-split-panel>

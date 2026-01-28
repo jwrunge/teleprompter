@@ -3,7 +3,10 @@
 	import Files from "./files/Files.svelte";
 	import { sectionViews, type SectionView } from "./sections";
 
-	let { view = $bindable() }: { view: SectionView } = $props();
+	let {
+		view = $bindable(),
+		includeCamera = false,
+	}: { view: SectionView; includeCamera?: boolean } = $props();
 </script>
 
 <sl-tab-group
@@ -11,7 +14,7 @@
 		view = e.detail.name as SectionView;
 	}}
 >
-	{#each sectionViews as tab}
+	{#each sectionViews.filter((view) => includeCamera || view !== "camera") as tab}
 		{@const ucFirst = tab[0].toUpperCase() + tab.slice(1)}
 		<sl-tab slot="nav" panel={tab} active={tab === view}>
 			{ucFirst}

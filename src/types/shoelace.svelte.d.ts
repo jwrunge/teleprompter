@@ -64,6 +64,8 @@ declare global {
 				variant?: string;
 				disabled?: boolean;
 				type?: "button" | "submit" | "reset";
+				caret?: boolean;
+				slot?: string;
 				onclick?: (event: ShoelaceEvent<SlButton>) => void;
 			};
 

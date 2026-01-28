@@ -12,10 +12,26 @@
 	let syncFilesDismissed = $state(
 		sessionStorage.getItem("syncFilesDismissed") === "true",
 	);
+
+	const loadFilesFromLocalCache = async () => {
+		if (appState) {
+			await C;
+		}
+	};
 </script>
 
-<section>
-	<h1>Files</h1>
+<section class="p-1">
+	<div class="flex justify-between align-center">
+		<h1>Files</h1>
+		<sl-dropdown>
+			<sl-button slot="trigger" caret>Add</sl-button>
+			<sl-menu>
+				<sl-menu-item value="cut">Upload Files</sl-menu-item>
+				<sl-menu-item value="copy">Add Folder</sl-menu-item>
+				<sl-menu-item value="copy">Speech-To-Text</sl-menu-item>
+			</sl-menu>
+		</sl-dropdown>
+	</div>
 
 	<sl-alert
 		class="sticky bottom-0"

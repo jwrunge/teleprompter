@@ -98,6 +98,10 @@
 	&.flex-column {
 		flex-direction: column;
 	}
+
+	&.align-baseline {
+		align-items: baseline;
+	}
 }
 
 .absolute {

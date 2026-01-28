@@ -44,13 +44,9 @@
 </div>
 
 {#if view === "camera"}
-	<section class="camera p-1">
-		<Camera />
-	</section>
+	<Camera />
 {:else if view === "files"}
-	<section class="files p-1">
-		<Files appState={null} />
-	</section>
+	<Files appState={null} />
 {:else if view === "voice"}
 	<section class="voice p-1"></section>
 {/if}

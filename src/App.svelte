@@ -5,7 +5,7 @@
 	import Files from "./files/Files.svelte";
 	import { SpeechRecognizerMgr } from "./lib/speech/index.svelte";
 
-	const show = $state<"files" | "voice">("files");
+	let show = $state<"files" | "voice">("files");
 	const recognizer = new SpeechRecognizerMgr();
 
 	const THEME_STORAGE_KEY = "theme";
@@ -52,7 +52,24 @@
 </script>
 
 <main>
-	<header class="toolbar">
+	<header class="flex justify-between align-center pr-1">
+		<sl-tab-group
+			onsl-tab-show={(e) => {
+				show = e.detail.name as typeof show;
+			}}
+		>
+			{#each ["Files", "Voice"] as tab}
+				{@const lowercase = tab.toLowerCase()}
+				<sl-tab
+					slot="nav"
+					panel={lowercase}
+					active={lowercase === show}
+				>
+					{tab}
+				</sl-tab>
+			{/each}
+		</sl-tab-group>
+
 		<sl-switch
 			size="small"
 			checked={dark}
@@ -73,7 +90,7 @@
 			<Files state={null} />
 		</section>
 	{:else if show === "voice"}
-		<section id="primary">
+		<section id="voice">
 			<h1>Voice (Streaming)</h1>
 			<div class="row">
 				<label>
@@ -132,21 +149,3 @@
 		</section>
 	{/if}
 </main>
-
-<style>
-	.toolbar {
-		position: fixed;
-		top: 0.75rem;
-		right: 0.75rem;
-		z-index: 10;
-	}
-
-	main {
-		width: 100%;
-		height: 100%;
-
-		display: grid;
-		gap: 1rem;
-		grid-template-columns: 25rem 1fr;
-	}
-</style>

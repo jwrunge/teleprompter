@@ -1,3 +1,4 @@
+import type { SlTabGroup } from "@shoelace-style/shoelace";
 import type SlButton from "@shoelace-style/shoelace/dist/components/button/button.js";
 import type SlSelect from "@shoelace-style/shoelace/dist/components/select/select.js";
 import type { HTMLAttributes } from "svelte/elements";
@@ -23,6 +24,13 @@ declare global {
 				value?: string;
 				"onsl-change"?: (event: ShoelaceEvent<SlSelect>) => void;
 				"onsl-input"?: (event: ShoelaceEvent<SlSelect>) => void;
+			};
+
+			"sl-tab-group": HTMLAttributes<SlTabGroup> & {
+				activeTab?: string;
+				"onsl-tab-show"?: (
+					event: ShoelaceEvent<SlTabGroup> & { detail: { name: string } },
+				) => void;
 			};
 		}
 	}

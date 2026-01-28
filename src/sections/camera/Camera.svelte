@@ -4,18 +4,18 @@
 	import {
 		VideoRecorder,
 		type RecordingResult,
-	} from "../lib/recording/videoRecorder";
+	} from "../../lib/recording/videoRecorder";
 	import {
 		AudioRecorder,
 		type RecordingResult as AudioRecordingResult,
-	} from "../lib/recording/audioRecorder";
+	} from "../../lib/recording/audioRecorder";
 	import {
 		clearDeviceProfiles,
 		loadDeviceProfiles,
 		makeProfileFromTrack,
 		upsertDeviceProfile,
 		type DeviceProfile,
-	} from "../lib/devices/deviceProfiles";
+	} from "../../lib/devices/deviceProfiles";
 
 	type RecordingMode = "video+audio" | "video-only" | "audio-only";
 

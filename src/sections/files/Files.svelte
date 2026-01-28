@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { State } from "../state";
+	import type { State } from "../../state";
 
 	let {
 		state,

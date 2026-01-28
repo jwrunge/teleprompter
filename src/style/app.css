@@ -29,10 +29,6 @@ body {
 	min-height: 100vh;
 }
 
-section {
-	padding: 1rem;
-}
-
 h1 {
 	font-size: 2rem;
 	line-height: 1.1;

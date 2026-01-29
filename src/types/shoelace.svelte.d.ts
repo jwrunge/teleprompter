@@ -41,6 +41,7 @@ type SlInputCommonAttrs = HTMLAttributes<SlInput> & {
 	min?: string | number;
 	max?: string | number;
 	step?: string | number;
+	autofocus?: boolean;
 	"onsl-change"?: (event: ShoelaceEvent<SlInput>) => void;
 	"onsl-input"?: (event: ShoelaceEvent<SlInput>) => void;
 };

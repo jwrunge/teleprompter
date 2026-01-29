@@ -673,12 +673,6 @@
 		align-items: center;
 	}
 
-	.field {
-		display: grid;
-		gap: 0.25rem;
-		font-size: 0.85rem;
-	}
-
 	.recording {
 		display: grid;
 		gap: 0.25rem;

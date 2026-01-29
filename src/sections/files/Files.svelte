@@ -18,6 +18,7 @@
 
 	let nodes = $state<Node<"dir" | "file">[]>([]);
 	let selectedIndices = $state<number[]>([]);
+	let showAsGrid = $state(true);
 
 	const getNodeAtPath = (path: number[]) => {
 		let node: Node<"dir" | "file"> | null = null;
@@ -137,6 +138,8 @@
 			>
 				<sl-icon name="chevron-left"></sl-icon>
 			</sl-button>
+
+			<!-- Add to fs -->
 			<sl-dropdown>
 				<sl-button slot="trigger">
 					<sl-icon name="plus-lg"></sl-icon>
@@ -157,6 +160,42 @@
 						Speech-To-Text
 						<sl-icon slot="prefix" name="mic"></sl-icon>
 					</sl-menu-item>
+				</sl-menu>
+			</sl-dropdown>
+
+			<!-- Files settings -->
+			<sl-dropdown>
+				<sl-button slot="trigger">
+					<sl-icon name="three-dots-vertical"></sl-icon>
+				</sl-button>
+				<sl-menu>
+					<sl-menu-item
+						value="showGrid"
+						disabled={showAsGrid}
+						onclick={() => {
+							showAsGrid = true;
+						}}
+					>
+						Show as grid
+						<sl-icon slot="prefix" name="grid"></sl-icon>
+						{#if showAsGrid}
+							<sl-icon slot="suffix" name="check"></sl-icon>
+						{/if}
+					</sl-menu-item>
+					<sl-menu-item
+						value="showList"
+						disabled={!showAsGrid}
+						onclick={() => {
+							showAsGrid = false;
+						}}
+					>
+						Show as list
+						<sl-icon slot="prefix" name="list"></sl-icon>
+						{#if !showAsGrid}
+							<sl-icon slot="suffix" name="check"></sl-icon>
+						{/if}
+					</sl-menu-item>
+					<sl-divider></sl-divider>
 				</sl-menu>
 			</sl-dropdown>
 		</sl-button-group>

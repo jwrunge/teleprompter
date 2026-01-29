@@ -23,6 +23,7 @@ import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 import "@shoelace-style/shoelace/dist/components/breadcrumb/breadcrumb.js";
 import "@shoelace-style/shoelace/dist/components/breadcrumb-item/breadcrumb-item.js";
 import "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
+import "@shoelace-style/shoelace/dist/components/divider/divider.js";
 
 setBasePath("/shoelace");
 

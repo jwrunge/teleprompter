@@ -26,6 +26,7 @@
 	"bundle": {
 		"active": true,
 		"targets": "all",
+		"externalBin": ["bin/ffmpeg"],
 		"macOS": {
 			"entitlements": "./Entitlements.plist"
 		},

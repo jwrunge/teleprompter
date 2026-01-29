@@ -4,9 +4,11 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"dev": "vite --port 5173 --strictPort",
 		"build": "vite build",
 		"preview": "vite preview",
+		"tauri:dev": "tauri dev",
+		"tauri:build": "tauri build",
 		"check": "svelte-check --tsconfig ./tsconfig.app.json --compiler-warnings \"a11y_click_events_have_key_events:ignore,a11y_no_static_element_interactions:ignore\" && tsc -p tsconfig.node.json",
 		"postinstall": "node scripts/copy-shoelace-assets.mjs",
 		"lint": "biome check",
@@ -15,6 +17,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.3.13",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"@tauri-apps/cli": "^2.9.6",
 		"@tsconfig/svelte": "^5.0.6",
 		"@types/node": "^24.10.1",
 		"svelte": "^5.43.8",
@@ -29,8 +32,8 @@
 	"dependencies": {
 		"@ffmpeg/ffmpeg": "^0.12.15",
 		"@ffmpeg/util": "^0.12.2",
+		"@shoelace-style/shoelace": "^2.20.1",
 		"@tauri-apps/api": "^2.0.0",
-		"@tauri-apps/plugin-fs": "^2.0.0",
-		"@shoelace-style/shoelace": "^2.20.1"
+		"@tauri-apps/plugin-fs": "^2.0.0"
 	}
 }

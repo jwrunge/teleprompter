@@ -1,0 +1,4 @@
+[toolchain]
+# Pinned to satisfy transitive deps (e.g. `time`) used by Tauri v2 toolchain.
+channel = "1.88.0"
+components = ["rustfmt", "clippy"]

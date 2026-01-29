@@ -1,4 +1,4 @@
-import { Filesystem } from "@capacitor/filesystem";
+import { readJson, writeJson } from "../../lib/storage/kvStore";
 
 export type Node<T extends "dir" | "file"> = {
 	type: T;
@@ -13,6 +13,7 @@ export class FileSystem {
 	#nodes = $state<Node<"dir" | "file">[]>([]);
 	#selectedIndices = $state<number[]>([]);
 	showAsGrid = $state(true);
+	#persistKey = "files.json";
 
 	constructor() {
 		void this.#loadFiles();
@@ -23,13 +24,11 @@ export class FileSystem {
 	};
 
 	#loadFilesFromLocalCache = async () => {
-		try {
-			const res = await Filesystem.readFile({ path: "files.json" });
-			this.#nodes =
-				typeof res.data === "string"
-					? (JSON.parse(res.data) as Node<"dir" | "file">[])
-					: [];
-		} catch {}
+		this.#nodes = await readJson<Node<"dir" | "file">[]>(this.#persistKey, []);
+	};
+
+	#saveFilesToLocalCache = async () => {
+		await writeJson(this.#persistKey, this.#nodes);
 	};
 
 	getNodeAtPath = (path: number[]) => {
@@ -139,7 +138,19 @@ export class FileSystem {
 		} else {
 			this.#nodes.push(newFolder);
 		}
+		void this.#saveFilesToLocalCache();
 	};
 
-	removeFolder = (name: string) => {};
+	removeFolder = (name: string) => {
+		const currentNode = this.currentNode;
+		if (!currentNode || currentNode.type !== "dir") return;
+
+		const idx = (currentNode as Directory).content.findIndex(
+			(node) => node.type === "dir" && node.name === name,
+		);
+		if (idx === -1) return;
+
+		(currentNode as Directory).content.splice(idx, 1);
+		void this.#saveFilesToLocalCache();
+	};
 }

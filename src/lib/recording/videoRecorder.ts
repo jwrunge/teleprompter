@@ -1,10 +1,10 @@
-import { Capacitor } from "@capacitor/core";
+import { isNativeShell } from "../platform/runtime";
 
 import {
 	mimeToExtension,
 	pickSupportedMimeType,
 	type RecordingDirectory,
-	saveToCapacitorFilesystem,
+	saveToAppFilesystem,
 } from "./recordingUtils";
 
 type RecorderState = "idle" | "recording" | "stopping";
@@ -100,8 +100,8 @@ export class VideoRecorder {
 
 					let filePath: string | undefined;
 					let fileUri: string | undefined;
-					if (Capacitor.isNativePlatform()) {
-						const saved = await saveToCapacitorFilesystem(
+					if (isNativeShell()) {
+						const saved = await saveToAppFilesystem(
 							blob,
 							this.fileName,
 							this.directory,

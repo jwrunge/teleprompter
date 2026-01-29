@@ -1,5 +1,5 @@
-import { Capacitor } from "@capacitor/core";
-import { CapacitorNativeRecognizer } from "./capacitorNativeRecognizer";
+import { isNativeShell } from "../platform/runtime";
+import { TauriNativeRecognizer } from "./tauriNativeRecognizer";
 import type {
 	SpeechRecognizer,
 	SpeechRecognizerEvents,
@@ -51,8 +51,8 @@ export class SpeechRecognizerMgr {
 		events: SpeechRecognizerEvents,
 		options: SpeechRecognizerOptions = {},
 	): SpeechRecognizer {
-		if (Capacitor.isNativePlatform()) {
-			const recognizer = new CapacitorNativeRecognizer(events);
+		if (isNativeShell()) {
+			const recognizer = new TauriNativeRecognizer(events);
 			recognizer.setLanguage(options.language ?? "en-US");
 			return recognizer;
 		} else {

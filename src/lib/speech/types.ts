@@ -26,7 +26,7 @@ export type SpeechRecognizerEvents = {
 };
 
 export interface SpeechRecognizer {
-	readonly backend: "web-speech" | "capacitor-native";
+	readonly backend: "web-speech" | "tauri-native";
 	readonly isSupported: boolean;
 
 	start(): Promise<void>;

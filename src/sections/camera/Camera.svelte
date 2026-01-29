@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { Capacitor } from "@capacitor/core";
+	import { isNativeShell } from "../../lib/platform/runtime";
 	import {
 		VideoRecorder,
 		type RecordingResult,
@@ -365,7 +365,7 @@
 			if (audioRecorder) {
 				const result = await audioRecorder.stop();
 				lastAudioRecording = result;
-				if (!Capacitor.isNativePlatform()) {
+				if (!isNativeShell()) {
 					audioDownloadUrl = URL.createObjectURL(result.blob);
 				}
 				lastVideoRecording = null;
@@ -373,7 +373,7 @@
 			} else if (videoRecorder) {
 				const result = await videoRecorder.stop();
 				lastVideoRecording = result;
-				if (!Capacitor.isNativePlatform()) {
+				if (!isNativeShell()) {
 					videoDownloadUrl = URL.createObjectURL(result.blob);
 				}
 				lastAudioRecording = null;

@@ -1,6 +1,10 @@
-import type { Directory } from "@capacitor/filesystem";
+import { isNativeShell } from "../platform/runtime";
+import {
+	type RecordingDirectory,
+	saveBlobToAppData,
+} from "../storage/fileStore";
 
-export type RecordingDirectory = "Documents" | "Data" | "Cache";
+export type { RecordingDirectory };
 
 export function pickSupportedMimeType(
 	preferred: string | undefined,
@@ -41,48 +45,17 @@ export function blobToBase64(blob: Blob): Promise<string> {
 	});
 }
 
-function toCapacitorDirectory(dir: RecordingDirectory): Directory {
-	// Imported lazily at runtime in saveToCapacitorFilesystem.
-	return dir as unknown as Directory;
-}
-
-export async function saveToCapacitorFilesystem(
+export async function saveToAppFilesystem(
 	blob: Blob,
 	fileName: string,
-	directory: RecordingDirectory,
+	_directory: RecordingDirectory,
 	subdir = "recordings",
 ): Promise<{ filePath: string; fileUri?: string }> {
-	const { Filesystem, Directory } = await import("@capacitor/filesystem");
-
-	const base64 = await blobToBase64(blob);
-	const dir =
-		directory === "Cache"
-			? Directory.Cache
-			: directory === "Data"
-				? Directory.Data
-				: Directory.Documents;
-
-	// keep old behavior but allow optional override
-	void toCapacitorDirectory(directory);
-
-	const filePath = `${subdir}/${fileName}`;
-	await Filesystem.writeFile({
-		path: filePath,
-		directory: dir,
-		data: base64,
-		recursive: true,
-	});
-
-	let fileUri: string | undefined;
-	try {
-		const uriResult = await Filesystem.getUri({
-			path: filePath,
-			directory: dir,
-		});
-		fileUri = uriResult.uri;
-	} catch {
-		// Optional
+	if (!isNativeShell()) {
+		throw new Error("Native filesystem save is not available on web.");
 	}
 
-	return { filePath, fileUri };
+	const filePath = `${subdir}/${fileName}`;
+	await saveBlobToAppData(blob, filePath);
+	return { filePath };
 }

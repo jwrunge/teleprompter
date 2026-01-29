@@ -1,4 +1,4 @@
-import { isNativeShell } from "../platform/runtime";
+import { isNativeShell, isTauriMobile } from "../platform/runtime";
 import { runFfmpegSidecar } from "./ffmpegSidecar";
 
 export type FfmpegExportResult = {
@@ -10,7 +10,19 @@ export async function exportRecordingToMp4(
 	outputFileName?: string,
 ): Promise<FfmpegExportResult> {
 	if (!isNativeShell()) {
-		throw new Error("FFmpeg export is only available in the desktop app.");
+		throw new Error("Export is only available in the native app.");
+	}
+
+	if (isTauriMobile()) {
+		const { invoke } = await import("@tauri-apps/api/core");
+		const result = await invoke<{ outputPath: string }>(
+			"plugin:media|export_recording_to_mp4",
+			{
+				inputPath: relativeInputPath,
+				outputFileName,
+			},
+		);
+		return { filePath: result.outputPath };
 	}
 
 	const fs = await import("@tauri-apps/plugin-fs");

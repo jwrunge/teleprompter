@@ -657,7 +657,7 @@
 					onclick={() => void exportLastRecordingToMp4()}
 					disabled={isExporting}
 				>
-					{isExporting ? "Exporting…" : "Export MP4 (desktop)"}
+					{isExporting ? "Exporting…" : "Export MP4 (native)"}
 				</sl-button>
 				{#if exportPath}
 					<p class="meta">MP4 saved: {exportPath}</p>

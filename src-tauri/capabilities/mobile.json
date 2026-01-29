@@ -6,6 +6,7 @@
 	"platforms": ["iOS", "android"],
 	"permissions": [
 		"core:default",
+		"media:allow-export_recording_to_mp4",
 
 		"fs:allow-read-text-file",
 		"fs:allow-write-text-file",

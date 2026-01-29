@@ -12,3 +12,10 @@ export function isTauri(): boolean {
 export function isNativeShell(): boolean {
 	return isTauri();
 }
+
+export function isTauriMobile(): boolean {
+	if (!isTauri()) return false;
+	if (typeof navigator === "undefined") return false;
+	const ua = navigator.userAgent ?? "";
+	return /Android|iPhone|iPad|iPod/i.test(ua);
+}

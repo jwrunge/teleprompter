@@ -137,8 +137,9 @@ export class VideoRecorder {
 }
 
 export function isWebCodecsLikelyAvailable(): boolean {
+	const g = globalThis as unknown as Record<string, unknown>;
 	return (
-		typeof (globalThis as any).VideoEncoder !== "undefined" &&
-		typeof (globalThis as any).MediaStreamTrackProcessor !== "undefined"
+		typeof g.VideoEncoder !== "undefined" &&
+		typeof g.MediaStreamTrackProcessor !== "undefined"
 	);
 }

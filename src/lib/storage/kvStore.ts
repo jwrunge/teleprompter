@@ -71,11 +71,11 @@ export async function readText(key: string): Promise<string | null> {
 		const fs = await import("@tauri-apps/plugin-fs");
 		try {
 			const fullPath = await tauriResolvePath(key);
-			// `exists` is available in plugin-fs; if it isn't, just attempt read.
-			const exists = (fs as any).exists as
-				| undefined
-				| ((p: string) => Promise<boolean>);
-			if (exists && !(await exists(fullPath))) return null;
+			try {
+				if (!(await fs.exists(fullPath))) return null;
+			} catch {
+				// If `exists` is not permitted by capabilities, we fall back to attempting the read.
+			}
 			return await fs.readTextFile(fullPath);
 		} catch {
 			return null;

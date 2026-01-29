@@ -6,7 +6,13 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!!**/dist", "!!**/*.svelte"]
+		"includes": [
+			"**",
+			"!**/*.svelte",
+			"!src-tauri/gen",
+			"!src-tauri/target",
+			"!dist"
+		]
 	},
 	"formatter": {
 		"enabled": true,

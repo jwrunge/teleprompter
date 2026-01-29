@@ -94,7 +94,7 @@ export function makeProfileFromTrack(options: {
 		firstSeenAt: now,
 		lastSeenAt: now,
 		userAgent: navigator.userAgent,
-		platform: (navigator as any).platform,
+		platform: navigator.platform,
 		supportedConstraints,
 		capabilities,
 		settings,

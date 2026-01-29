@@ -12,6 +12,13 @@ import type {
 let ffmpeg: FFmpeg | null = null;
 let isLoaded = false;
 
+function isCrossOriginIsolated(): boolean {
+	return (
+		(globalThis as unknown as { crossOriginIsolated?: boolean })
+			.crossOriginIsolated === true
+	);
+}
+
 function post(message: FFmpegWorkerResponse, transfer?: Transferable[]) {
 	(self as unknown as DedicatedWorkerGlobalScope).postMessage(
 		message,
@@ -54,7 +61,7 @@ async function ensureLoaded(options?: {
 	if (isLoaded) return;
 
 	const preferMT = options?.preferMultiThread ?? true;
-	const canMT = preferMT && (globalThis as any).crossOriginIsolated === true;
+	const canMT = preferMT && isCrossOriginIsolated();
 
 	// Using blob URLs avoids CORS/COEP issues when fetching cross-origin.
 	const baseURL =
@@ -89,7 +96,7 @@ self.onmessage = async (event: MessageEvent<FFmpegWorkerRequest>) => {
 					requestId: msg.requestId,
 					result: {
 						loaded: true,
-						multiThread: (globalThis as any).crossOriginIsolated === true,
+						multiThread: isCrossOriginIsolated(),
 					},
 				});
 				return;

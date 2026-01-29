@@ -1,8 +1,13 @@
 import {
 	type BytesPayload,
 	canUseSharedArrayBuffer,
+	type FFmpegDeleteFileRequest,
+	type FFmpegExecRequest,
+	type FFmpegInitRequest,
+	type FFmpegTerminateRequest,
 	type FFmpegWorkerRequest,
 	type FFmpegWorkerResponse,
+	type FFmpegWriteFileRequest,
 } from "./ffmpegWorkerProtocol";
 
 export type FFmpegClientOptions = {
@@ -12,16 +17,23 @@ export type FFmpegClientOptions = {
 	onProgress?: (progress: number, time?: number) => void;
 };
 
+type FFmpegWorkerRequestWithoutId =
+	| Omit<FFmpegInitRequest, "requestId">
+	| Omit<FFmpegWriteFileRequest, "requestId">
+	| Omit<FFmpegDeleteFileRequest, "requestId">
+	| Omit<FFmpegExecRequest, "requestId">
+	| Omit<FFmpegTerminateRequest, "requestId">;
+
 export class FFmpegClient {
 	private worker: Worker;
 	private pending = new Map<
 		string,
-		{ resolve: (value: any) => void; reject: (err: any) => void }
+		{ resolve: (value: unknown) => void; reject: (err: unknown) => void }
 	>();
 	private opts: FFmpegClientOptions;
 	private readFilePending = new Map<
 		string,
-		{ resolve: (value: Uint8Array) => void; reject: (err: any) => void }
+		{ resolve: (value: Uint8Array) => void; reject: (err: unknown) => void }
 	>();
 
 	constructor(options: FFmpegClientOptions = {}) {
@@ -80,11 +92,17 @@ export class FFmpegClient {
 			: `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 	}
 
-	private call<T = unknown>(msg: any, transfer?: Transferable[]): Promise<T> {
+	private call<T = unknown>(
+		msg: FFmpegWorkerRequestWithoutId,
+		transfer?: Transferable[],
+	): Promise<T> {
 		const requestId = this.nextId();
 		const full = { ...msg, requestId } as FFmpegWorkerRequest;
 		return new Promise<T>((resolve, reject) => {
-			this.pending.set(requestId, { resolve, reject });
+			this.pending.set(requestId, {
+				resolve: (value) => resolve(value as T),
+				reject,
+			});
 			this.worker.postMessage(full, transfer ?? []);
 		});
 	}

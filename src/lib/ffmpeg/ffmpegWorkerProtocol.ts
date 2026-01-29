@@ -94,9 +94,13 @@ export type FFmpegWorkerResponse =
 	| FFmpegLogEvent
 	| FFmpegProgressEvent;
 
-export function canUseSharedArrayBuffer(): boolean {
+function isCrossOriginIsolated(): boolean {
 	return (
-		typeof SharedArrayBuffer !== "undefined" &&
-		(globalThis as any).crossOriginIsolated === true
+		(globalThis as unknown as { crossOriginIsolated?: boolean })
+			.crossOriginIsolated === true
 	);
+}
+
+export function canUseSharedArrayBuffer(): boolean {
+	return typeof SharedArrayBuffer !== "undefined" && isCrossOriginIsolated();
 }

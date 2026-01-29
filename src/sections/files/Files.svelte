@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from "svelte";
 	import type { State } from "../../state";
-	import { FileSystem } from "./filesystem.svelte";
+	import { FileSystem, type Node } from "./filesystem.svelte";
 	import type { SlDialog, SlInput } from "@shoelace-style/shoelace";
 
 	let {
@@ -24,6 +24,45 @@
 	let newFolderInput = $state<SlInput | null>(null);
 	let newFolderName = $state("");
 </script>
+
+{#snippet dirOrFile<T extends "dir" | "file">(type: T, data: Node<T>)}
+	{#if type === "dir"}
+		<div class="folder-item" onclick={() => filesystem.pushPath(data.name)}>
+			<sl-icon name="folder" style="margin-right: 0.5rem;"></sl-icon>
+			{data.name}
+		</div>
+	{:else if type === "file"}
+		<div class="mt-1 flex justify-between align-baseline">
+			<div>{data.name}</div>
+			<sl-button variant="text" caret>Download</sl-button>
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet gridOrList<T extends "dir" | "file">(
+	type: T,
+	data: Node<T>[],
+	showAsGrid: boolean,
+	fallback: string,
+)}
+	{#if showAsGrid}
+		<div class="file-list-block">
+			{#if data.length}
+				{#each data as datum}
+					{@render dirOrFile(type, datum)}
+				{/each}
+			{:else}
+				<p>{fallback}</p>
+			{/if}
+		</div>
+	{:else if data.length}
+		{#each data as datum}
+			{@render dirOrFile(type, datum)}
+		{/each}
+	{:else}
+		<p>{fallback}</p>
+	{/if}
+{/snippet}
 
 <section class="p-1">
 	<h1>Files</h1>
@@ -55,10 +94,6 @@
 					<sl-icon name="plus-lg"></sl-icon>
 				</sl-button>
 				<sl-menu>
-					<sl-menu-item value="uploadFolder">
-						Upload Files
-						<sl-icon slot="prefix" name="file-arrow-up"></sl-icon>
-					</sl-menu-item>
 					<sl-menu-item
 						value="addFolder"
 						onclick={() => newFolderDialog?.show()}
@@ -66,8 +101,16 @@
 						Add Folder
 						<sl-icon slot="prefix" name="folder"></sl-icon>
 					</sl-menu-item>
+					<sl-menu-item value="uploadFolder">
+						Upload Files
+						<sl-icon slot="prefix" name="file-arrow-up"></sl-icon>
+					</sl-menu-item>
 					<sl-menu-item value="speechToText">
-						Speech-To-Text
+						New Script
+						<sl-icon slot="prefix" name="book"></sl-icon>
+					</sl-menu-item>
+					<sl-menu-item value="speechToText">
+						New Recording
 						<sl-icon slot="prefix" name="mic"></sl-icon>
 					</sl-menu-item>
 				</sl-menu>
@@ -112,6 +155,7 @@
 	</div>
 
 	<div class="file-list">
+		<!-- Directory list -->
 		{#if filesystem.dirs.length}
 			<div class="file-list-block">
 				{#each filesystem.dirs as dir}
@@ -127,6 +171,7 @@
 			</div>
 		{/if}
 
+		<!-- File list -->
 		<div class="file-list-block">
 			{#if filesystem.files.length}
 				{#each filesystem.files as file}
@@ -181,6 +226,15 @@
 		placeholder="My folder name"
 		value={newFolderName}
 		onsl-input={(e) => (newFolderName = (e.target as SlInput).value)}
+		onkeydown={(e) => {
+			if (e.key !== "Enter") return;
+			e.preventDefault();
+
+			const name = newFolderName.trim();
+			if (!name) return;
+			filesystem.addFolder(name);
+			newFolderDialog?.hide();
+		}}
 	></sl-input>
 	<sl-button
 		slot="footer"
@@ -194,7 +248,9 @@
 		variant="primary"
 		disabled={!newFolderName}
 		onclick={() => {
-			filesystem.addFolder(newFolderName);
+			const name = newFolderName.trim();
+			if (!name) return;
+			filesystem.addFolder(name);
 			newFolderDialog?.hide();
 		}}>Add</sl-button
 	>

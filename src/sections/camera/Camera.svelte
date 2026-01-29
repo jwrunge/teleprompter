@@ -16,6 +16,7 @@
 		upsertDeviceProfile,
 		type DeviceProfile,
 	} from "../../lib/devices/deviceProfiles";
+	import { exportRecordingToMp4 } from "../../lib/ffmpeg/ffmpegExport";
 
 	type RecordingMode = "video+audio" | "video-only" | "audio-only";
 
@@ -32,6 +33,9 @@
 	let lastAudioRecording = $state<AudioRecordingResult | null>(null);
 	let videoDownloadUrl = $state<string | null>(null);
 	let audioDownloadUrl = $state<string | null>(null);
+	let exportError = $state<string | null>(null);
+	let exportPath = $state<string | null>(null);
+	let isExporting = $state(false);
 
 	let videoDevices = $state<MediaDeviceInfo[]>([]);
 	let audioDevices = $state<MediaDeviceInfo[]>([]);
@@ -265,6 +269,9 @@
 		lastVideoRecording = null;
 		lastAudioRecording = null;
 		recordError = null;
+		exportError = null;
+		exportPath = null;
+		isExporting = false;
 	}
 
 	function stopMicStream() {
@@ -370,6 +377,8 @@
 				}
 				lastVideoRecording = null;
 				videoDownloadUrl = null;
+				exportError = null;
+				exportPath = null;
 			} else if (videoRecorder) {
 				const result = await videoRecorder.stop();
 				lastVideoRecording = result;
@@ -378,6 +387,8 @@
 				}
 				lastAudioRecording = null;
 				audioDownloadUrl = null;
+				exportError = null;
+				exportPath = null;
 			}
 		} catch (err) {
 			recordError = err instanceof Error ? err.message : String(err);
@@ -386,6 +397,24 @@
 			audioRecorder = null;
 			stopMicStream();
 			isRecording = false;
+		}
+	}
+
+	async function exportLastRecordingToMp4() {
+		if (!lastVideoRecording?.filePath) return;
+		if (!isNativeShell()) return;
+
+		isExporting = true;
+		exportError = null;
+		try {
+			const result = await exportRecordingToMp4(
+				lastVideoRecording.filePath,
+			);
+			exportPath = result.filePath;
+		} catch (err) {
+			exportError = err instanceof Error ? err.message : String(err);
+		} finally {
+			isExporting = false;
 		}
 	}
 
@@ -621,6 +650,21 @@
 				>
 					Download {recordingMode === "video+audio" ? "A/V" : "video"}
 				</a>
+			{/if}
+			{#if isNativeShell() && lastVideoRecording.filePath}
+				<sl-button
+					variant="primary"
+					onclick={() => void exportLastRecordingToMp4()}
+					disabled={isExporting}
+				>
+					{isExporting ? "Exporting…" : "Export MP4 (desktop)"}
+				</sl-button>
+				{#if exportPath}
+					<p class="meta">MP4 saved: {exportPath}</p>
+				{/if}
+				{#if exportError}
+					<p class="error">{exportError}</p>
+				{/if}
 			{/if}
 		</div>
 	{/if}

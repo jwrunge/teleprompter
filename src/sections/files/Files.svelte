@@ -1,14 +1,8 @@
 <script lang="ts">
-	import { onMount, tick } from "svelte";
+	import { tick } from "svelte";
 	import type { State } from "../../state";
-	import { Filesystem } from "@capacitor/filesystem";
+	import { FileSystem } from "./filesystem.svelte";
 	import type { SlDialog, SlInput } from "@shoelace-style/shoelace";
-
-	type Node<T extends "dir" | "file"> = {
-		type: T;
-		name: string;
-		content: (T extends "file" ? string : Node<"dir" | "file">)[];
-	};
 
 	let {
 		appState,
@@ -16,58 +10,11 @@
 		appState: State | null;
 	} = $props();
 
-	let nodes = $state<Node<"dir" | "file">[]>([]);
-	let selectedIndices = $state<number[]>([]);
+	const filesystem = new FileSystem();
+
+	// Files settings
 	let showAsGrid = $state(true);
-
-	const getNodeAtPath = (path: number[]) => {
-		let node: Node<"dir" | "file"> | null = null;
-		for (const idx of path) {
-			if (node === null) {
-				node = nodes[idx] ?? null;
-			} else if (node.type === "dir") {
-				node = (node.content[idx] as Node<"dir" | "file">) ?? null;
-			} else {
-				return null;
-			}
-		}
-		return node;
-	};
-
-	let currentNode = $derived(
-		((selectedIndices: number[]) => {
-			let node: Node<"dir" | "file"> | null = null;
-			for (const idx of selectedIndices) {
-				if (node === null) {
-					node = nodes[idx];
-				} else if (node.type === "dir") {
-					node = node.content[idx] as Node<"dir" | "file">;
-				} else {
-					node = null;
-					break;
-				}
-			}
-			return node ?? { type: "dir", name: "root", content: nodes };
-		})(selectedIndices),
-	);
-
-	let dirs = $derived(
-		(currentNode?.type === "dir" &&
-			((currentNode as Node<"dir">)?.content.filter(
-				({ type }) => type === "dir",
-			) as Node<"dir">[])) ||
-			[],
-	);
-	let files = $derived(
-		(currentNode?.type === "dir" &&
-			((currentNode as Node<"dir">)?.content.filter(
-				({ type }) => type === "file",
-			) as Node<"file">[])) ||
-			[],
-	);
-
 	let syncFiles = $derived(Boolean(appState?.userId));
-
 	let syncFilesDismissed = $state(
 		sessionStorage.getItem("syncFilesDismissed") === "true",
 	);
@@ -76,36 +23,6 @@
 	let newFolderDialog = $state<SlDialog | null>(null);
 	let newFolderInput = $state<SlInput | null>(null);
 	let newFolderName = $state("");
-
-	const loadFilesFromLocalCache = async () => {
-		if (appState) {
-			try {
-				const res = await Filesystem.readFile({ path: "files.json" });
-				nodes =
-					typeof res.data === "string"
-						? (JSON.parse(res.data) as Node<"dir" | "file">[])
-						: [];
-			} catch (e) {
-				// No files yet
-			}
-		}
-	};
-
-	const addFolder = (name: string) => {
-		if (currentNode?.type == "file") return;
-		const newFolder: Node<"dir"> = { type: "dir", name, content: [] };
-		if (currentNode) {
-			currentNode.content.push(newFolder);
-		} else {
-			nodes.push(newFolder);
-		}
-	};
-
-	const removeFolder = (name: string) => {};
-
-	onMount(async () => {
-		await loadFilesFromLocalCache();
-	});
 </script>
 
 <section class="p-1">
@@ -113,17 +30,12 @@
 
 	<div class="flex justify-between gap-1 align-center">
 		<sl-breadcrumb>
-			<sl-breadcrumb-item onclick={() => (selectedIndices = [])}
+			<sl-breadcrumb-item onclick={() => filesystem.home()}
 				>Home</sl-breadcrumb-item
 			>
-			{#each selectedIndices as idx, level}
-				{@const crumb =
-					getNodeAtPath(selectedIndices.slice(0, level + 1))?.name ||
-					"unknown"}
-				<sl-breadcrumb-item
-					onclick={() =>
-						(selectedIndices = selectedIndices.slice(0, level + 1))}
-					>{crumb}</sl-breadcrumb-item
+			{#each filesystem.breadcrumbs as { name, path }}
+				<sl-breadcrumb-item onclick={() => filesystem.navigateTo(path)}
+					>{name}</sl-breadcrumb-item
 				>
 			{/each}
 		</sl-breadcrumb>
@@ -131,10 +43,8 @@
 		<sl-button-group label="Alignment">
 			<!-- Back button -->
 			<sl-button
-				disabled={selectedIndices.length === 0}
-				onclick={() => {
-					selectedIndices = selectedIndices.slice(0, -1);
-				}}
+				disabled={filesystem.breadcrumbs.length === 0}
+				onclick={() => filesystem.back()}
 			>
 				<sl-icon name="chevron-left"></sl-icon>
 			</sl-button>
@@ -202,24 +112,12 @@
 	</div>
 
 	<div class="file-list">
-		{#if dirs.length}
+		{#if filesystem.dirs.length}
 			<div class="file-list-block">
-				{#each dirs as dir}
+				{#each filesystem.dirs as dir}
 					<div
 						class="folder-item"
-						onclick={() => {
-							const parent =
-								currentNode?.type === "dir"
-									? (currentNode as Node<"dir">).content
-									: nodes;
-							const childIdx = parent.indexOf(dir);
-							if (childIdx >= 0) {
-								selectedIndices = [
-									...selectedIndices,
-									childIdx,
-								];
-							}
-						}}
+						onclick={() => filesystem.pushPath(dir.name)}
 					>
 						<sl-icon name="folder" style="margin-right: 0.5rem;"
 						></sl-icon>
@@ -230,8 +128,8 @@
 		{/if}
 
 		<div class="file-list-block">
-			{#if files.length}
-				{#each files as file}
+			{#if filesystem.files.length}
+				{#each filesystem.files as file}
 					<div class="mt-1 flex justify-between align-baseline">
 						<div>{file.name}</div>
 						<sl-button variant="text" caret>Download</sl-button>
@@ -296,7 +194,7 @@
 		variant="primary"
 		disabled={!newFolderName}
 		onclick={() => {
-			addFolder(newFolderName);
+			filesystem.addFolder(newFolderName);
 			newFolderDialog?.hide();
 		}}>Add</sl-button
 	>
